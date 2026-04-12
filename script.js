@@ -352,16 +352,16 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
 // === Management (CRUD) Logic ===
 const mockDB = {
     debtors: [
-        { id: 1, name: 'Acme Corp', phone: '555-0100', limit: 5000, isUsed: true },
-        { id: 2, name: 'John Doe', phone: '555-0200', limit: 1000, isUsed: false }
+        { id: 1, name: 'Acme Corp', address: '123 Main St', phoneNo: '555-0100', taxRegistered: true, creditPeriod: 30, isUsed: true },
+        { id: 2, name: 'John Doe', address: '456 Side St', phoneNo: '555-0200', taxRegistered: false, creditPeriod: 15, isUsed: false }
     ],
     creditors: [
-        { id: 1, name: 'Global Supply', email: 'admin@global.com', balance: 2500, isUsed: true },
-        { id: 2, name: 'Local Parts', email: 'sales@local.com', balance: 0, isUsed: false }
+        { id: 1, name: 'Global Supply', address: '789 Ind Ave', phoneNo: '555-0300', taxRegistered: true, creditPeriod: 45, isUsed: true },
+        { id: 2, name: 'Local Parts', address: '321 Town Rd', phoneNo: '555-0400', taxRegistered: false, creditPeriod: 14, isUsed: false }
     ],
     items: [
-        { id: 1, partNo: 'O-001', name: 'Premium Oil Filter', price: 15.50, isUsed: true },
-        { id: 2, partNo: 'B-001', name: 'Front Brake Pads', price: 45.00, isUsed: false }
+        { id: 1, partNo: 'O-001', name: 'Premium Oil Filter', category: 'Filters', price: 15.50, isUsed: true },
+        { id: 2, partNo: 'B-001', name: 'Front Brake Pads', category: 'Brakes', price: '', isUsed: false }
     ],
     users: [
         { id: 1, username: 'admin', role: 'Admin', isUsed: true },
@@ -386,25 +386,34 @@ let activeTab = 'debtors';
 
 const schemas = {
     debtors: [
-        { key: 'name', label: 'Name', type: 'text' },
-        { key: 'phone', label: 'Phone', type: 'text' },
-        { key: 'limit', label: 'Credit Limit', type: 'number' }
+        { key: 'name', label: 'Name', type: 'text', required: true },
+        { key: 'address', label: 'Address', type: 'text', required: true },
+        { key: 'phoneNo', label: 'Phone No', type: 'text', required: true },
+        { key: 'taxRegistered', label: 'Tax Registered (Yes/No)', type: 'checkbox', required: false },
+        { key: 'creditPeriod', label: 'Credit Period (Days)', type: 'number', required: true }
     ],
     creditors: [
-        { key: 'name', label: 'Name', type: 'text' },
-        { key: 'email', label: 'Email', type: 'text' },
-        { key: 'balance', label: 'Balance', type: 'number' }
+        { key: 'name', label: 'Name', type: 'text', required: true },
+        { key: 'address', label: 'Address', type: 'text', required: true },
+        { key: 'phoneNo', label: 'Phone No', type: 'text', required: true },
+        { key: 'taxRegistered', label: 'Tax Registered (Yes/No)', type: 'checkbox', required: false },
+        { key: 'creditPeriod', label: 'Credit Period (Days)', type: 'number', required: true }
     ],
     items: [
-        { key: 'partNo', label: 'Part No', type: 'text' },
-        { key: 'name', label: 'Item Name', type: 'text' },
-        { key: 'price', label: 'Price', type: 'number' }
+        { key: 'partNo', label: 'Part No', type: 'text', required: true },
+        { key: 'name', label: 'Item Name', type: 'text', required: true },
+        { key: 'category', label: 'Category', type: 'text', required: false },
+        { key: 'price', label: 'Price (optional)', type: 'number', required: false }
     ],
     users: [
-        { key: 'username', label: 'Username', type: 'text' },
-        { key: 'role', label: 'Role', type: 'text' }
+        { key: 'username', label: 'Username', type: 'text', required: true },
+        { key: 'role', label: 'Role', type: 'text', required: true }
     ]
 };
+
+const crudModalWrapper = document.getElementById('crud-modal-wrapper');
+const crudModalClose = document.getElementById('crud-modal-close');
+const mgmtOpenAddBtn = document.getElementById('mgmt-open-add-btn');
 
 if (settingsBtn && managementView) {
     settingsBtn.addEventListener('click', () => {
@@ -429,6 +438,14 @@ if (settingsBtn && managementView) {
     });
 
     mgmtCancelEdit.addEventListener('click', resetMgmtForm);
+    crudModalClose.addEventListener('click', resetMgmtForm);
+    
+    if (mgmtOpenAddBtn) {
+        mgmtOpenAddBtn.addEventListener('click', () => {
+            resetMgmtForm();
+            crudModalWrapper.style.display = 'flex';
+        });
+    }
 
     mgmtForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -438,7 +455,14 @@ if (settingsBtn && managementView) {
 
         schema.forEach(field => {
             const input = document.getElementById(`mgmt-${field.key}`);
-            record[field.key] = field.type === 'number' ? parseFloat(input.value) : input.value;
+            if (field.type === 'checkbox') {
+                record[field.key] = input.checked;
+            } else if (field.type === 'number') {
+                const val = parseFloat(input.value);
+                record[field.key] = isNaN(val) ? '' : val;
+            } else {
+                record[field.key] = input.value;
+            }
         });
 
         if (id) {
@@ -462,13 +486,21 @@ function renderMgmtView() {
     mgmtTitle.innerText = `Manage ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`;
     const schema = schemas[activeTab];
 
-    // Build Inputs
-    mgmtInputsContainer.innerHTML = schema.map(field => `
+    // Build Inputs inside modal
+    mgmtInputsContainer.innerHTML = schema.map(field => {
+        if (field.type === 'checkbox') {
+             return `<label style="display:flex; align-items:center; gap: 10px; color: var(--text-secondary); cursor: pointer; height: 100%;">
+                        <input type="checkbox" id="mgmt-${field.key}" style="width: 20px; height: 20px;">
+                        <span>${field.label}</span>
+                     </label>`;
+        }
+        return `
         <div class="input-group">
             <label>${field.label}</label>
-            <input type="${field.type}" id="mgmt-${field.key}" class="glass-input" required ${field.type === 'number' ? 'step="any"' : ''}>
+            <input type="${field.type}" id="mgmt-${field.key}" class="glass-input" ${field.required ? 'required' : ''} ${field.type === 'number' ? 'step="any"' : ''} style="height: 48px;">
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     // Build Table Header
     mgmtTableHeader.innerHTML = schema.map(field => `<th>${field.label}</th>`).join('') + '<th width="120">Actions</th>';
@@ -477,7 +509,12 @@ function renderMgmtView() {
     const data = mockDB[activeTab];
     mgmtTableBody.innerHTML = data.map(item => `
         <tr>
-            ${schema.map(field => `<td>${item[field.key]}</td>`).join('')}
+            ${schema.map(field => {
+                let displayVal = item[field.key];
+                if (field.type === 'checkbox') displayVal = displayVal ? 'Yes' : 'No';
+                if (displayVal === null || displayVal === undefined) displayVal = '';
+                return `<td>${displayVal}</td>`;
+            }).join('')}
             <td>
                 <button class="action-btn mgmt-edit-btn" data-id="${item.id}" style="display:inline-block; margin-right: 5px; opacity:1; color: var(--input-focus);">Edit</button>
                 <button class="action-btn text-danger mgmt-del-btn" data-id="${item.id}" style="display:inline-block; opacity:1;" ${item.isUsed ? 'disabled title="Cannot delete, item is in use"' : ''}>${item.isUsed ? '🔒' : '×'}</button>
@@ -492,10 +529,15 @@ function renderMgmtView() {
             const record = mockDB[activeTab].find(item => item.id == id);
             mgmtIdInput.value = record.id;
             schema.forEach(field => {
-                document.getElementById(`mgmt-${field.key}`).value = record[field.key];
+                const el = document.getElementById(`mgmt-${field.key}`);
+                if (field.type === 'checkbox') {
+                    el.checked = record[field.key];
+                } else {
+                    el.value = record[field.key] !== null ? record[field.key] : '';
+                }
             });
             mgmtFormTitle.innerText = 'Edit Record';
-            mgmtCancelEdit.style.display = 'inline-block';
+            crudModalWrapper.style.display = 'flex';
         });
     });
 
@@ -521,5 +563,5 @@ function resetMgmtForm() {
     mgmtForm.reset();
     mgmtIdInput.value = '';
     mgmtFormTitle.innerText = 'Add New';
-    mgmtCancelEdit.style.display = 'none';
+    if (crudModalWrapper) crudModalWrapper.style.display = 'none';
 }

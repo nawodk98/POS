@@ -451,21 +451,28 @@
                 <div class="management-content">
                     <div class="management-header">
                         <h2 id="mgmt-title">Manage Debtors</h2>
-                        <button class="glass-btn-soft cancel-btn" id="close-mgmt-btn" style="padding: 8px 16px;">Back</button>
+                        <div>
+                            <button class="login-btn" id="mgmt-open-add-btn" style="padding: 8px 16px; margin-right: 10px; display: inline-flex; align-items: center; justify-content: center; width: auto; font-size: 0.95rem; font-weight: 600; border-radius: 10px;">+ Add New</button>
+                            <button class="glass-btn-soft cancel-btn" id="close-mgmt-btn" style="padding: 8px 16px;">Back</button>
+                        </div>
                     </div>
 
-                    <div class="mgmt-form-section glass-panel-inner">
-                        <h3 id="mgmt-form-title">Add New</h3>
-                        <form id="mgmt-form">
-                            <input type="hidden" id="mgmt-id">
-                            <div class="mgmt-inputs" id="mgmt-inputs-container">
-                                <!-- Inputs dynamically injected based on tab -->
-                            </div>
-                            <div class="mgmt-actions" style="margin-top: 15px; display: flex; gap: 10px;">
-                                <button type="submit" class="login-btn" style="padding: 10px 20px; font-size: 1rem; margin-top: 0;">Save</button>
-                                <button type="button" class="glass-btn-soft cancel-btn" id="mgmt-cancel-edit" style="display: none; padding: 10px 20px;">Cancel</button>
-                            </div>
-                        </form>
+                    <!-- Modal Wrapper -->
+                    <div id="crud-modal-wrapper" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); justify-content: center; align-items: center;">
+                        <div class="mgmt-form-section glass-panel" style="width: 90%; max-width: 600px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;">
+                            <button id="crud-modal-close" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+                            <h3 id="mgmt-form-title" style="font-size: 1.5rem; color: var(--input-focus); margin-bottom: 25px;">Add New</h3>
+                            <form id="mgmt-form">
+                                <input type="hidden" id="mgmt-id">
+                                <div class="mgmt-inputs" id="mgmt-inputs-container" style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+                                    <!-- Inputs dynamically injected based on tab -->
+                                </div>
+                                <div class="mgmt-actions" style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;">
+                                    <button type="button" class="glass-btn-soft cancel-btn" id="mgmt-cancel-edit" style="padding: 12px 24px;">Cancel</button>
+                                    <button type="submit" class="login-btn" style="padding: 12px 30px; margin-top: 0;">Save Record</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
 
                     <table class="invoice-table" style="margin-top: 20px;">
