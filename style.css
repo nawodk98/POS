@@ -740,6 +740,16 @@ select.custom-select {
 .item-input { width: 100%; background: transparent; border: 1px solid transparent; }
 .num-input { width: 100%; background: transparent; border: 1px solid transparent; text-align: center; }
 
+/* Remove scroll bar / spin buttons on number inputs */
+.num-input::-webkit-outer-spin-button,
+.num-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.num-input {
+    -moz-appearance: textfield; /* Firefox */
+}
+
 .item-input:focus, .num-input:focus {
     background: var(--input-bg);
     border: 1px solid var(--input-border);

@@ -169,7 +169,7 @@ function updateInvoiceDisplay() {
         invoiceTitle.style.color = "#10B981"; // Emerald green for tax
         taxRow.style.display = "flex";
 
-        const taxAmount = baseSubtotal * 0.10; // 10% tax example
+        const taxAmount = baseSubtotal * 0.18; // 18% tax example
         invoiceTaxDisplay.innerText = taxAmount.toFixed(2);
         invoiceGrandTotal.innerText = (baseSubtotal + taxAmount).toFixed(2);
     } else {
