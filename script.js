@@ -348,3 +348,178 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
         });
     }
 }
+
+// === Management (CRUD) Logic ===
+const mockDB = {
+    debtors: [
+        { id: 1, name: 'Acme Corp', phone: '555-0100', limit: 5000, isUsed: true },
+        { id: 2, name: 'John Doe', phone: '555-0200', limit: 1000, isUsed: false }
+    ],
+    creditors: [
+        { id: 1, name: 'Global Supply', email: 'admin@global.com', balance: 2500, isUsed: true },
+        { id: 2, name: 'Local Parts', email: 'sales@local.com', balance: 0, isUsed: false }
+    ],
+    items: [
+        { id: 1, partNo: 'O-001', name: 'Premium Oil Filter', price: 15.50, isUsed: true },
+        { id: 2, partNo: 'B-001', name: 'Front Brake Pads', price: 45.00, isUsed: false }
+    ],
+    users: [
+        { id: 1, username: 'admin', role: 'Admin', isUsed: true },
+        { id: 2, username: 'cashier1', role: 'Cashier', isUsed: false }
+    ]
+};
+
+const settingsBtn = document.getElementById('settings-btn');
+const managementView = document.getElementById('management-view');
+const closeMgmtBtn = document.getElementById('close-mgmt-btn');
+const mgmtTabs = document.querySelectorAll('.mgmt-tab');
+const mgmtTitle = document.getElementById('mgmt-title');
+const mgmtInputsContainer = document.getElementById('mgmt-inputs-container');
+const mgmtTableHeader = document.getElementById('mgmt-table-header');
+const mgmtTableBody = document.getElementById('mgmt-table-body');
+const mgmtForm = document.getElementById('mgmt-form');
+const mgmtIdInput = document.getElementById('mgmt-id');
+const mgmtCancelEdit = document.getElementById('mgmt-cancel-edit');
+const mgmtFormTitle = document.getElementById('mgmt-form-title');
+
+let activeTab = 'debtors';
+
+const schemas = {
+    debtors: [
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'phone', label: 'Phone', type: 'text' },
+        { key: 'limit', label: 'Credit Limit', type: 'number' }
+    ],
+    creditors: [
+        { key: 'name', label: 'Name', type: 'text' },
+        { key: 'email', label: 'Email', type: 'text' },
+        { key: 'balance', label: 'Balance', type: 'number' }
+    ],
+    items: [
+        { key: 'partNo', label: 'Part No', type: 'text' },
+        { key: 'name', label: 'Item Name', type: 'text' },
+        { key: 'price', label: 'Price', type: 'number' }
+    ],
+    users: [
+        { key: 'username', label: 'Username', type: 'text' },
+        { key: 'role', label: 'Role', type: 'text' }
+    ]
+};
+
+if (settingsBtn && managementView) {
+    settingsBtn.addEventListener('click', () => {
+        document.querySelector('.content-view.active').classList.remove('active');
+        managementView.classList.add('active');
+        renderMgmtView();
+    });
+
+    closeMgmtBtn.addEventListener('click', () => {
+        managementView.classList.remove('active');
+        document.getElementById('dashboard-view').classList.add('active');
+    });
+
+    mgmtTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            mgmtTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            activeTab = tab.dataset.tab;
+            resetMgmtForm();
+            renderMgmtView();
+        });
+    });
+
+    mgmtCancelEdit.addEventListener('click', resetMgmtForm);
+
+    mgmtForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = mgmtIdInput.value;
+        const schema = schemas[activeTab];
+        let record = { id: id ? parseInt(id) : Date.now(), isUsed: false };
+
+        schema.forEach(field => {
+            const input = document.getElementById(`mgmt-${field.key}`);
+            record[field.key] = field.type === 'number' ? parseFloat(input.value) : input.value;
+        });
+
+        if (id) {
+            // Edit
+            const index = mockDB[activeTab].findIndex(item => item.id == id);
+            if (index > -1) {
+                record.isUsed = mockDB[activeTab][index].isUsed; // preserve isUsed
+                mockDB[activeTab][index] = record;
+            }
+        } else {
+            // Add
+            mockDB[activeTab].push(record);
+        }
+
+        resetMgmtForm();
+        renderMgmtView();
+    });
+}
+
+function renderMgmtView() {
+    mgmtTitle.innerText = `Manage ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}`;
+    const schema = schemas[activeTab];
+
+    // Build Inputs
+    mgmtInputsContainer.innerHTML = schema.map(field => `
+        <div class="input-group">
+            <label>${field.label}</label>
+            <input type="${field.type}" id="mgmt-${field.key}" class="glass-input" required ${field.type === 'number' ? 'step="any"' : ''}>
+        </div>
+    `).join('');
+
+    // Build Table Header
+    mgmtTableHeader.innerHTML = schema.map(field => `<th>${field.label}</th>`).join('') + '<th width="120">Actions</th>';
+
+    // Build Table Body
+    const data = mockDB[activeTab];
+    mgmtTableBody.innerHTML = data.map(item => `
+        <tr>
+            ${schema.map(field => `<td>${item[field.key]}</td>`).join('')}
+            <td>
+                <button class="action-btn mgmt-edit-btn" data-id="${item.id}" style="display:inline-block; margin-right: 5px; opacity:1; color: var(--input-focus);">Edit</button>
+                <button class="action-btn text-danger mgmt-del-btn" data-id="${item.id}" style="display:inline-block; opacity:1;" ${item.isUsed ? 'disabled title="Cannot delete, item is in use"' : ''}>${item.isUsed ? '🔒' : '×'}</button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Attach Edit/Delete Listeners
+    document.querySelectorAll('.mgmt-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.id;
+            const record = mockDB[activeTab].find(item => item.id == id);
+            mgmtIdInput.value = record.id;
+            schema.forEach(field => {
+                document.getElementById(`mgmt-${field.key}`).value = record[field.key];
+            });
+            mgmtFormTitle.innerText = 'Edit Record';
+            mgmtCancelEdit.style.display = 'inline-block';
+        });
+    });
+
+    document.querySelectorAll('.mgmt-del-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = e.target.dataset.id;
+            const record = mockDB[activeTab].find(item => item.id == id);
+            
+            if (record.isUsed) {
+                alert("Cannot delete this record because it is currently in use.");
+                return;
+            }
+
+            if (confirm("Are you sure you want to delete this record?")) {
+                mockDB[activeTab] = mockDB[activeTab].filter(item => item.id != id);
+                renderMgmtView();
+            }
+        });
+    });
+}
+
+function resetMgmtForm() {
+    mgmtForm.reset();
+    mgmtIdInput.value = '';
+    mgmtFormTitle.innerText = 'Add New';
+    mgmtCancelEdit.style.display = 'none';
+}

@@ -338,7 +338,7 @@
                 </div>
 
                 <!-- Quick Action 6: Settings -->
-                <div class="feature-item group">
+                <div class="feature-item group" id="settings-btn">
                     <button class="feature-btn glass-btn-round">
                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -436,6 +436,48 @@
                         </svg>
                         Print Invoice
                     </button>
+                </div>
+            </div>
+
+            <!-- Management View -->
+            <div id="management-view" class="content-view management-panel glass-panel">
+                <div class="management-sidebar glass-panel-inner">
+                    <button class="mgmt-tab active" data-tab="debtors">Debtors</button>
+                    <button class="mgmt-tab" data-tab="creditors">Creditors</button>
+                    <button class="mgmt-tab" data-tab="items">Items</button>
+                    <button class="mgmt-tab" data-tab="users">Users</button>
+                </div>
+                
+                <div class="management-content">
+                    <div class="management-header">
+                        <h2 id="mgmt-title">Manage Debtors</h2>
+                        <button class="glass-btn-soft cancel-btn" id="close-mgmt-btn" style="padding: 8px 16px;">Back</button>
+                    </div>
+
+                    <div class="mgmt-form-section glass-panel-inner">
+                        <h3 id="mgmt-form-title">Add New</h3>
+                        <form id="mgmt-form">
+                            <input type="hidden" id="mgmt-id">
+                            <div class="mgmt-inputs" id="mgmt-inputs-container">
+                                <!-- Inputs dynamically injected based on tab -->
+                            </div>
+                            <div class="mgmt-actions" style="margin-top: 15px; display: flex; gap: 10px;">
+                                <button type="submit" class="login-btn" style="padding: 10px 20px; font-size: 1rem; margin-top: 0;">Save</button>
+                                <button type="button" class="glass-btn-soft cancel-btn" id="mgmt-cancel-edit" style="display: none; padding: 10px 20px;">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <table class="invoice-table" style="margin-top: 20px;">
+                        <thead>
+                            <tr id="mgmt-table-header">
+                                <!-- Header dynamically injected -->
+                            </tr>
+                        </thead>
+                        <tbody id="mgmt-table-body">
+                            <!-- Items appear here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
