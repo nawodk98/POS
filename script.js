@@ -195,6 +195,132 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
     // When checkbox is toggled manually
     taxRegisteredCheckbox.addEventListener('change', updateInvoiceDisplay);
 
+    // Mock Parts Database
+    const partsDatabase = [
+        { partNo: 'O-001', name: 'Premium Oil Filter', price: 15.50 },
+        { partNo: 'O-002', name: 'Standard Oil Filter', price: 8.50 },
+        { partNo: 'B-001', name: 'Front Brake Pads', price: 45.00 },
+        { partNo: 'B-002', name: 'Rear Brake Pads', price: 40.00 },
+        { partNo: 'S-001', name: 'Iridium Spark Plug', price: 12.00 },
+        { partNo: 'A-001', name: 'Cabin Air Filter', price: 20.00 },
+        { partNo: 'W-001', name: 'Wiper Blades 22"', price: 18.00 }
+    ];
+
+    const partSearchInput = document.getElementById('part-search-input');
+    const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
+    const entryQty = document.getElementById('entry-qty');
+    const entryPrice = document.getElementById('entry-price');
+    const addEntryBtn = document.getElementById('add-entry-btn');
+
+    let selectedPart = null;
+
+    if (partSearchInput) {
+        // Search Logic
+        partSearchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            autocompleteDropdown.innerHTML = '';
+            selectedPart = null;
+            entryQty.disabled = true;
+            entryPrice.disabled = true;
+            addEntryBtn.disabled = true;
+
+            if (query.length === 0) {
+                autocompleteDropdown.style.display = 'none';
+                return;
+            }
+
+            const matches = partsDatabase.filter(part => 
+                part.name.toLowerCase().includes(query) || 
+                part.partNo.toLowerCase().includes(query)
+            );
+
+            if (matches.length > 0) {
+                autocompleteDropdown.style.display = 'block';
+                matches.forEach(part => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.innerHTML = `
+                        <span class="dropdown-item-title">${part.name}</span>
+                        <span class="dropdown-item-desc">${part.partNo}</span>
+                    `;
+                    item.addEventListener('click', () => {
+                        selectPart(part);
+                    });
+                    autocompleteDropdown.appendChild(item);
+                });
+            } else {
+                autocompleteDropdown.style.display = 'none';
+            }
+        });
+
+        // Hide dropdown on click outside
+        document.addEventListener('click', (e) => {
+            if (e.target !== partSearchInput) {
+                autocompleteDropdown.style.display = 'none';
+            }
+        });
+
+        function selectPart(part) {
+            selectedPart = part;
+            partSearchInput.value = part.name;
+            entryPrice.value = part.price.toFixed(2);
+            entryQty.value = 1;
+            
+            entryQty.disabled = false;
+            entryPrice.disabled = false;
+            addEntryBtn.disabled = false;
+            
+            autocompleteDropdown.style.display = 'none';
+            entryQty.focus();
+        }
+
+        function addCurrentEntry() {
+            if (!selectedPart) return;
+            const qty = parseInt(entryQty.value) || 1;
+            const price = parseFloat(entryPrice.value) || selectedPart.price;
+            
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${selectedPart.partNo}</td>
+                <td>${selectedPart.name}</td>
+                <td><input type="number" class="item-qty glass-input num-input" value="${qty}" min="1" style="width:100%; text-align:center;"></td>
+                <td><input type="number" class="item-price glass-input num-input" value="${price.toFixed(2)}" step="0.01" style="width:100%; text-align:center;"></td>
+                <td class="item-total">${(qty * price).toFixed(2)}</td>
+                <td><button class="action-btn text-danger remove-item-btn">×</button></td>
+            `;
+            invoiceItemsTable.appendChild(newRow);
+            
+            // Reset fields
+            partSearchInput.value = '';
+            entryQty.value = '';
+            entryPrice.value = '';
+            entryQty.disabled = true;
+            entryPrice.disabled = true;
+            addEntryBtn.disabled = true;
+            selectedPart = null;
+            partSearchInput.focus();
+            
+            calculateTotals();
+        }
+
+        addEntryBtn.addEventListener('click', addCurrentEntry);
+
+        // Enter key to add
+        [partSearchInput, entryQty, entryPrice].forEach(input => {
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (selectedPart) {
+                        addCurrentEntry();
+                    } else if (input === partSearchInput && autocompleteDropdown.children.length > 0) {
+                        // If pressing enter on search and there's a match, pick the first one
+                        autocompleteDropdown.children[0].click();
+                    }
+                }
+            });
+        });
+    }
+
     // Table Event Delegation for inputs and remove buttons
     if (invoiceItemsTable) {
         invoiceItemsTable.addEventListener('input', (e) => {
@@ -205,27 +331,9 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
 
         invoiceItemsTable.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-item-btn')) {
-                const rowCount = invoiceItemsTable.querySelectorAll('tr').length;
-                if (rowCount > 1) {
-                    e.target.closest('tr').remove();
-                    calculateTotals();
-                }
+                e.target.closest('tr').remove();
+                calculateTotals();
             }
-        });
-    }
-
-    // Add Item Logic
-    if (addItemBtn) {
-        addItemBtn.addEventListener('click', () => {
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td><input type="text" placeholder="Part No. or Name..." class="glass-input item-input item-name"></td>
-                <td><input type="number" placeholder="Qty" step="1" class="glass-input num-input item-qty"></td>
-                <td><input type="number" placeholder="Price" step="0.01" class="glass-input num-input item-price"></td>
-                <td class="item-total">0.00</td>
-                <td><button class="action-btn text-danger remove-item-btn">×</button></td>
-            `;
-            invoiceItemsTable.appendChild(newRow);
         });
     }
 

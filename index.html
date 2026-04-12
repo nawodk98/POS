@@ -379,30 +379,31 @@
                     </label>
                 </div>
 
-                <table class="invoice-table">
+                <div class="item-entry-section">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="part-search-input" placeholder="Search Part No. or Name..." class="glass-input" autocomplete="off">
+                        <div id="autocomplete-dropdown" class="dropdown-content"></div>
+                    </div>
+                    <input type="number" id="entry-qty" placeholder="Qty" step="1" class="glass-input num-input" style="flex: 0.5;" disabled>
+                    <input type="number" id="entry-price" placeholder="Price" step="0.01" class="glass-input num-input" style="flex: 1;" disabled>
+                    <button id="add-entry-btn" class="add-item-btn glass-btn-soft" style="align-self: center;" disabled>Add (Enter)</button>
+                </div>
+
+                <table class="invoice-table" style="margin-top: 20px;">
                     <thead>
                         <tr>
-                            <th>Item Details</th>
-                            <th width="100">Qty</th>
-                            <th width="150">Price</th>
-                            <th width="150">Total</th>
+                            <th>Part No</th>
+                            <th>Item Name</th>
+                            <th width="80">Qty</th>
+                            <th width="120">Price</th>
+                            <th width="120">Total</th>
                             <th width="50"></th>
                         </tr>
                     </thead>
                     <tbody id="invoice-items">
-                        <tr>
-                            <td><input type="text" placeholder="Part No. or Name..."
-                                    class="glass-input item-input item-name"></td>
-                            <td><input type="number" placeholder="Qty" step="1" class="glass-input num-input item-qty">
-                            </td>
-                            <td><input type="number" placeholder="Price" step="0.01"
-                                    class="glass-input num-input item-price"></td>
-                            <td class="item-total">0.00</td>
-                            <td><button class="action-btn text-danger remove-item-btn">×</button></td>
-                        </tr>
+                        <!-- Added items will appear here -->
                     </tbody>
                 </table>
-                <button class="add-item-btn glass-btn-soft" id="add-item-btn">+ Add Another Item</button>
 
                 <div class="invoice-summary">
                     <div class="summary-row">

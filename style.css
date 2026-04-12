@@ -925,3 +925,66 @@ select.custom-select {
         display: none !important; /* Hide delete X buttons */
     }
 }
+
+/* Item Entry Section & Autocomplete */
+.item-entry-section {
+    display: flex;
+    gap: 15px;
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    align-items: center;
+}
+
+.autocomplete-wrapper {
+    flex: 2;
+    position: relative;
+}
+
+.dropdown-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--input-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    display: none;
+    backdrop-filter: blur(10px);
+}
+
+.dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.dropdown-item:hover, .dropdown-item.active {
+    background: var(--input-focus);
+    color: white;
+}
+
+.dropdown-item-title {
+    font-weight: 600;
+}
+
+.dropdown-item-desc {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.item-entry-section input {
+    height: 48px;
+}
