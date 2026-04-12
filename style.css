@@ -740,13 +740,13 @@ select.custom-select {
 .item-input { width: 100%; background: transparent; border: 1px solid transparent; }
 .num-input { width: 100%; background: transparent; border: 1px solid transparent; text-align: center; }
 
-/* Remove scroll bar / spin buttons on number inputs */
-.num-input::-webkit-outer-spin-button,
-.num-input::-webkit-inner-spin-button {
+/* Remove scroll bar / spin buttons on all number inputs */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
-.num-input {
+input[type=number] {
     -moz-appearance: textfield; /* Firefox */
 }
 
