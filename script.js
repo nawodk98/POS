@@ -457,12 +457,35 @@ const crudModalWrapper = document.getElementById('crud-modal-wrapper');
 const crudModalClose = document.getElementById('crud-modal-close');
 const mgmtOpenAddBtn = document.getElementById('mgmt-open-add-btn');
 
+const addProductBtn = document.getElementById('add-product-btn');
+
 if (settingsBtn && managementView) {
     settingsBtn.addEventListener('click', () => {
-        document.querySelector('.content-view.active').classList.remove('active');
+        document.querySelector('.content-view.active')?.classList.remove('active');
         managementView.classList.add('active');
         renderMgmtView();
     });
+    
+    if (addProductBtn) {
+        addProductBtn.addEventListener('click', () => {
+            document.querySelector('.content-view.active')?.classList.remove('active');
+            managementView.classList.add('active');
+            
+            // Switch to Items tab
+            mgmtTabs.forEach(t => t.classList.remove('active'));
+            const itemsTab = Array.from(mgmtTabs).find(t => t.dataset.tab === 'items');
+            if (itemsTab) itemsTab.classList.add('active');
+            
+            activeTab = 'items';
+            resetMgmtForm();
+            renderMgmtView();
+            
+            // Automatically pop open the Add New modal
+            setTimeout(() => {
+                if (crudModalWrapper) crudModalWrapper.style.display = 'flex';
+            }, 50);
+        });
+    }
 
     closeMgmtBtn.addEventListener('click', () => {
         managementView.classList.remove('active');
