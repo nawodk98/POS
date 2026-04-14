@@ -848,16 +848,22 @@ input[type=number] {
 
 @media print {
     body, html {
-        background: none;
+        background: white !important;
         overflow: visible;
+        color: #000 !important;
     }
-    
-    .theme-toggle, .sidebar, .bg-shape, 
+
+    /* Hide everything except the active content panel */
+    .theme-toggle, .sidebar, .bg-shape,
     .invoice-actions, .add-item-btn,
-    #dashboard-view, #login-view {
+    .item-entry-section, #dashboard-view,
+    #login-view, .report-filters,
+    #report-debtor-selector, #print-report-btn,
+    #close-report-btn, #print-invoice-btn,
+    #close-invoice-btn, .pos-toast {
         display: none !important;
     }
-    
+
     #menu-view {
         display: block !important;
         opacity: 1 !important;
@@ -870,41 +876,46 @@ input[type=number] {
         display: block !important;
     }
 
-    #invoice-view {
+    .content-view.active {
         display: block !important;
     }
-    
-    .invoice-panel {
+
+    .invoice-panel, .management-panel {
         box-shadow: none !important;
         border: none !important;
         background: transparent !important;
-        padding: 0;
-        max-height: none;
-        overflow: visible;
-        color: #000;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+        padding: 20px 0 0;
+        max-height: none !important;
+        overflow: visible !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
         width: 100% !important;
         max-width: none !important;
+        animation: none !important;
     }
-    
+
     .invoice-header, .invoice-customer-section, .invoice-summary {
         background: transparent !important;
         border: none !important;
         padding: 0;
-        margin-top: 20px;
     }
 
     .invoice-header {
         border-bottom: 2px solid #000 !important;
-        padding-bottom: 20px;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
     }
-    
+
     .invoice-table th {
         border-bottom: 2px solid #000 !important;
         color: #000 !important;
     }
-    
+
+    .invoice-table td {
+        border-bottom: 1px solid #ccc !important;
+        color: #000 !important;
+    }
+
     .glass-input, .custom-select {
         border: none !important;
         background: transparent !important;
@@ -913,17 +924,15 @@ input[type=number] {
         padding: 0 !important;
         pointer-events: none;
     }
-    
+
     select.custom-select {
         background-image: none !important;
         -webkit-appearance: none;
-        -moz-appearance: none;
         appearance: none;
     }
 
-    .text-danger {
-        display: none !important; /* Hide delete X buttons */
-    }
+    .text-danger { display: none !important; }
+    .remember-me { display: none !important; }
 }
 
 /* Item Entry Section & Autocomplete */
@@ -1070,4 +1079,54 @@ input[type=number] {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 15px;
+}
+
+/* =========================================
+   TOAST NOTIFICATION
+========================================= */
+.pos-toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 16px 24px;
+    border-radius: 14px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    z-index: 9999;
+    animation: toastIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    max-width: 380px;
+}
+
+.pos-toast.success { border-left: 4px solid #10B981; }
+.pos-toast.error   { border-left: 4px solid #EF4444; }
+.pos-toast.info    { border-left: 4px solid var(--input-focus); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(10px); }
+}
+
+/* Login error message */
+#login-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    padding: 10px 16px;
+    color: #EF4444;
+    font-size: 0.9rem;
+    text-align: center;
 }
