@@ -1130,3 +1130,54 @@ input[type=number] {
     font-size: 0.9rem;
     text-align: center;
 }
+
+/* =========================================
+   STATUS BADGES
+========================================= */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.status-badge.paid {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+}
+.status-badge.unpaid {
+    background: rgba(251, 191, 36, 0.12);
+    color: #F59E0B;
+}
+.status-badge.cash {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+.status-badge.credit {
+    background: rgba(168, 85, 247, 0.1);
+    color: #A855F7;
+}
+
+/* History View Row Hover */
+#history-table-body tr {
+    transition: background 0.2s;
+}
+#history-table-body tr:hover {
+    background: var(--tree-hover-bg);
+}
+
+/* Return Qty Input */
+.return-qty-input {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    border-radius: 8px !important;
+}
+.return-qty-input:focus {
+    border-color: var(--input-focus) !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+.return-qty-input:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

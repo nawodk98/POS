@@ -27,11 +27,20 @@ const DEFAULT_DB = {
     users: [
         { id:1, username:'admin',    password:'admin', role:'Admin',   isUsed:true  },
         { id:2, username:'cashier1', password:'1234',  role:'Cashier', isUsed:false }
-    ]
+    ],
+    invoices: [],
+    grns: [],
+    salesReturns: [],
+    purchaseReturns: []
 };
 const mockDB = loadDB() || DEFAULT_DB;
 // Migration: add password to old saved users
 if (mockDB.users) mockDB.users.forEach(u => { if (!u.password) u.password = u.username === 'admin' ? 'admin' : '1234'; });
+// Migration: add new arrays for history
+if (!mockDB.invoices) mockDB.invoices = [];
+if (!mockDB.grns) mockDB.grns = [];
+if (!mockDB.salesReturns) mockDB.salesReturns = [];
+if (!mockDB.purchaseReturns) mockDB.purchaseReturns = [];
 
 // === NAVIGATION HELPER ===
 function showContent(viewId) {
@@ -130,13 +139,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sidebarNav(title) {
         switch(title) {
-            case 'Dashboard':     showContent('dashboard-view'); break;
-            case 'Point of Sale': initInvoiceNumber(); showContent('invoice-view'); break;
-            case 'Customers':     openManagementTab('debtors'); break;
-            case 'Settings':      openManagementTab('debtors'); break;
-            case 'Stock In/Out':  initGrn(); showContent('add-stock-view'); break;
+            case 'Dashboard':        showContent('dashboard-view'); break;
+            case 'Point of Sale':
+            case 'New Invoice':      initInvoiceNumber(); showContent('invoice-view'); break;
+            case 'Invoice History':  renderHistory('invoices'); break;
+            case 'Sales Returns':    renderHistory('salesReturns'); break;
+            case 'Customers':        openManagementTab('debtors'); break;
+            case 'Settings':         openManagementTab('debtors'); break;
+            case 'Stock In/Out':     initGrn(); showContent('add-stock-view'); break;
+            case 'GRN History':      renderHistory('grns'); break;
+            case 'Purchase Returns': renderHistory('purchaseReturns'); break;
             case 'Categories':
-            case 'Products':      openManagementTab('items'); break;
+            case 'Products':         openManagementTab('items'); break;
         }
     }
 
@@ -243,13 +257,40 @@ if (saveGrnBtn) {
         if (!gi||gi.rows.length===0) { alert('Add at least one item.'); return; }
         const newId = parseInt(localStorage.getItem('lastGrnId')||'0')+1;
         localStorage.setItem('lastGrnId', newId);
+
+        const grnId = document.getElementById('grn-number')?.innerText;
+        const supplier = mockDB.creditors.find(c => c.id == supEl.value);
+        const payTerms = document.getElementById('grn-payment-terms')?.value || 'credit';
+        const refNo = document.getElementById('grn-ref')?.value || '';
+        const items = [];
+        let totalCost = 0;
+
         gi.querySelectorAll('tr').forEach(row => {
-            const pNo=row.cells[0]?.innerText, qty=parseFloat(row.querySelector('.grn-qty')?.value)||0;
+            const pNo=row.cells[0]?.innerText, name=row.cells[1]?.innerText;
+            const qty=parseFloat(row.querySelector('.grn-qty')?.value)||0;
+            const cost=parseFloat(row.querySelector('.grn-cost')?.value)||0;
+            const lineTotal = qty * cost;
+            items.push({ partNo: pNo, name, qty, cost, total: lineTotal, returnedQty: 0 });
+            totalCost += lineTotal;
             const item=mockDB.items.find(i=>i.partNo===pNo);
             if(item){item.stock=(item.stock||0)+qty;item.isUsed=true;}
         });
+
+        // Persist GRN record
+        mockDB.grns.push({
+            id: grnId,
+            date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+            supplierId: parseInt(supEl.value),
+            supplierName: supplier ? supplier.name : 'Unknown',
+            refNo,
+            paymentTerms: payTerms,
+            items,
+            totalCost,
+            status: payTerms === 'cash' ? 'paid' : 'unpaid'
+        });
+
         saveDB();
-        alert(`✅ Stock received!\nGRN: ${document.getElementById('grn-number')?.innerText}`);
+        alert(`✅ Stock received!\nGRN: ${grnId}`);
         showContent('dashboard-view');
     });
 }
@@ -458,6 +499,53 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
     const printBtn=document.getElementById('print-invoice-btn');
     if(printBtn){
         printBtn.addEventListener('click',()=>{
+            // Collect invoice data before saving
+            const invId = document.getElementById('invoice-number')?.innerText;
+            const custSel = document.getElementById('invoice-customer');
+            const custId = custSel?.value ? parseInt(custSel.value) : null;
+            const custName = custSel?.options[custSel.selectedIndex]?.text || 'Walk-in Customer';
+            const payTerms = document.getElementById('invoice-payment-terms')?.value || 'cash';
+            const isTax = document.getElementById('tax-registered-checkbox')?.checked || false;
+            const invItems = [];
+            let subtotal = 0;
+
+            document.querySelectorAll('#invoice-items tr').forEach(row => {
+                const pNo = row.cells[0]?.innerText;
+                const name = row.cells[1]?.innerText;
+                const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
+                const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+                const lineTotal = qty * price;
+                invItems.push({ partNo: pNo, name, qty, price, total: lineTotal, returnedQty: 0 });
+                subtotal += lineTotal;
+            });
+
+            if (invItems.length === 0) { alert('Add at least one item before saving.'); return; }
+
+            const tax = isTax ? subtotal * 0.18 : 0;
+            const grandTotal = subtotal + tax;
+
+            // Persist invoice record
+            mockDB.invoices.push({
+                id: invId,
+                date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+                customerId: custId,
+                customerName: custName,
+                paymentTerms: payTerms,
+                taxRegistered: isTax,
+                items: invItems,
+                subtotal,
+                tax,
+                grandTotal,
+                status: payTerms === 'cash' ? 'paid' : 'unpaid'
+            });
+
+            // Update stock (deduct sold items)
+            invItems.forEach(itm => {
+                const dbItem = mockDB.items.find(i => i.partNo === itm.partNo);
+                if (dbItem) { dbItem.stock = (dbItem.stock || 0) - itm.qty; dbItem.isUsed = true; }
+            });
+
+            saveDB();
             window.print();
             const newId=parseInt(localStorage.getItem('lastInvoiceId')||'1')+1;
             localStorage.setItem('lastInvoiceId',newId); initInvoiceNumber();
@@ -697,6 +785,396 @@ function renderReport(reportId) {
 document.querySelectorAll('.tree-content[data-report]').forEach(node=>{
     node.addEventListener('click',()=>renderReport(node.getAttribute('data-report')));
 });
+
+// === HISTORY VIEWS ===
+const closeHistoryBtn = document.getElementById('close-history-btn');
+if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => showContent('dashboard-view'));
+
+let currentHistoryType = null;
+
+function renderHistory(type) {
+    currentHistoryType = type;
+    showContent('history-view');
+    const titleEl = document.getElementById('history-title');
+    const headerEl = document.getElementById('history-table-header');
+    const bodyEl = document.getElementById('history-table-body');
+    if (!titleEl || !headerEl || !bodyEl) return;
+
+    switch(type) {
+        case 'invoices':
+            titleEl.innerText = '\uD83D\uDCCB Invoice History';
+            headerEl.innerHTML = '<th>Invoice No</th><th>Date</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th width="120">Actions</th>';
+            bodyEl.innerHTML = mockDB.invoices.length > 0
+                ? mockDB.invoices.slice().reverse().map(inv => `<tr>
+                    <td style="font-weight:600;color:var(--input-focus);">${inv.id}</td><td>${inv.date}</td><td>${inv.customerName}</td>
+                    <td style="font-weight:600;">${inv.grandTotal.toFixed(2)}</td>
+                    <td><span class="status-badge ${inv.paymentTerms}">${inv.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</span></td>
+                    <td><span class="status-badge ${inv.status}">${inv.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span></td>
+                    <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('invoice','${inv.id}')">View</button></td>
+                </tr>`).join('')
+                : '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">No invoices found. Create one from Point of Sale.</td></tr>';
+            break;
+
+        case 'grns':
+            titleEl.innerText = '\uD83D\uDCE6 GRN History';
+            headerEl.innerHTML = '<th>GRN No</th><th>Date</th><th>Supplier</th><th>Ref</th><th>Total</th><th>Payment</th><th>Status</th><th width="100">Actions</th>';
+            bodyEl.innerHTML = mockDB.grns.length > 0
+                ? mockDB.grns.slice().reverse().map(grn => `<tr>
+                    <td style="font-weight:600;color:#10B981;">${grn.id}</td><td>${grn.date}</td><td>${grn.supplierName}</td><td>${grn.refNo||'-'}</td>
+                    <td style="font-weight:600;">${grn.totalCost.toFixed(2)}</td>
+                    <td><span class="status-badge ${grn.paymentTerms}">${grn.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</span></td>
+                    <td><span class="status-badge ${grn.status}">${grn.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span></td>
+                    <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('grn','${grn.id}')">View</button></td>
+                </tr>`).join('')
+                : '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:30px;">No GRNs found. Receive stock from Stock In/Out.</td></tr>';
+            break;
+
+        case 'salesReturns':
+            titleEl.innerText = '\u21A9\uFE0F Sales Returns';
+            headerEl.innerHTML = '<th>Return No</th><th>Date</th><th>Invoice No</th><th>Customer</th><th>Refund Total</th><th width="100">Actions</th>';
+            bodyEl.innerHTML = mockDB.salesReturns.length > 0
+                ? mockDB.salesReturns.slice().reverse().map(sr => `<tr>
+                    <td style="font-weight:600;color:#EF4444;">${sr.id}</td><td>${sr.date}</td>
+                    <td style="color:var(--input-focus);">${sr.invoiceId}</td><td>${sr.customerName}</td>
+                    <td style="font-weight:600;color:#EF4444;">-${sr.totalRefund.toFixed(2)}</td>
+                    <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('salesReturn','${sr.id}')">View</button></td>
+                </tr>`).join('')
+                : '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:30px;">No sales returns found.</td></tr>';
+            break;
+
+        case 'purchaseReturns':
+            titleEl.innerText = '\u21A9\uFE0F Purchase Returns';
+            headerEl.innerHTML = '<th>Return No</th><th>Date</th><th>GRN No</th><th>Supplier</th><th>Refund Total</th><th width="100">Actions</th>';
+            bodyEl.innerHTML = mockDB.purchaseReturns.length > 0
+                ? mockDB.purchaseReturns.slice().reverse().map(pr => `<tr>
+                    <td style="font-weight:600;color:#EF4444;">${pr.id}</td><td>${pr.date}</td>
+                    <td style="color:#10B981;">${pr.grnId}</td><td>${pr.supplierName}</td>
+                    <td style="font-weight:600;color:#EF4444;">-${pr.totalRefund.toFixed(2)}</td>
+                    <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('purchaseReturn','${pr.id}')">View</button></td>
+                </tr>`).join('')
+                : '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:30px;">No purchase returns found.</td></tr>';
+            break;
+    }
+}
+
+// === TRANSACTION DETAIL MODAL ===
+function openTxModal(type, id) {
+    const modal = document.getElementById('tx-modal-wrapper');
+    const titleEl = document.getElementById('tx-modal-title');
+    const contentEl = document.getElementById('tx-modal-content');
+    const actionsEl = document.getElementById('tx-modal-actions');
+    if (!modal || !titleEl || !contentEl || !actionsEl) return;
+    modal.style.display = 'flex';
+    actionsEl.innerHTML = '';
+
+    if (type === 'invoice') {
+        const inv = mockDB.invoices.find(i => i.id === id);
+        if (!inv) return;
+        titleEl.innerText = `Invoice: ${inv.id}`;
+        contentEl.innerHTML = `
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:20px;">
+                <div>
+                    <p style="color:var(--text-secondary);margin-bottom:4px;">Customer: <strong style="color:var(--text-primary);">${inv.customerName}</strong></p>
+                    <p style="color:var(--text-secondary);margin-bottom:4px;">Date: <strong>${inv.date}</strong></p>
+                    <p style="color:var(--text-secondary);">Payment: <strong>${inv.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</strong></p>
+                </div>
+                <div style="text-align:right;">
+                    <p style="color:var(--text-secondary);font-size:0.85rem;">GRAND TOTAL</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:#10B981;">${inv.grandTotal.toFixed(2)}</p>
+                    <span class="status-badge ${inv.status}" style="font-size:0.9rem;">${inv.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span>
+                </div>
+            </div>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Returned</th>
+            </tr></thead><tbody>
+                ${inv.items.map(it => `<tr>
+                    <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                    <td>${it.price.toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
+                    <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};font-weight:600;">${it.returnedQty || 0}</td>
+                </tr>`).join('')}
+            </tbody></table>
+            ${inv.tax > 0 ? `<p style="text-align:right;margin-top:10px;color:var(--text-secondary);">Subtotal: ${inv.subtotal.toFixed(2)} | Tax (18%): ${inv.tax.toFixed(2)}</p>` : ''}
+        `;
+        const hasReturnable = inv.items.some(it => (it.returnedQty || 0) < it.qty);
+        if (hasReturnable) {
+            actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;color:#EF4444;border-color:rgba(239,68,68,0.3);" onclick="showReturnForm('invoice','${inv.id}')">\u21A9 Create Return</button>`;
+        }
+        if (inv.status === 'unpaid') {
+            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="markAsPaid('invoice','${inv.id}');">\u2705 Mark as Paid</button>`;
+        }
+        actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
+
+    } else if (type === 'grn') {
+        const grn = mockDB.grns.find(g => g.id === id);
+        if (!grn) return;
+        titleEl.innerText = `GRN: ${grn.id}`;
+        contentEl.innerHTML = `
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:20px;">
+                <div>
+                    <p style="color:var(--text-secondary);margin-bottom:4px;">Supplier: <strong style="color:var(--text-primary);">${grn.supplierName}</strong></p>
+                    <p style="color:var(--text-secondary);margin-bottom:4px;">Date: <strong>${grn.date}</strong> | Ref: <strong>${grn.refNo||'-'}</strong></p>
+                    <p style="color:var(--text-secondary);">Payment: <strong>${grn.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</strong></p>
+                </div>
+                <div style="text-align:right;">
+                    <p style="color:var(--text-secondary);font-size:0.85rem;">TOTAL COST</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:#F59E0B;">${grn.totalCost.toFixed(2)}</p>
+                    <span class="status-badge ${grn.status}" style="font-size:0.9rem;">${grn.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span>
+                </div>
+            </div>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th>Returned</th>
+            </tr></thead><tbody>
+                ${grn.items.map(it => `<tr>
+                    <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                    <td>${it.cost.toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
+                    <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};font-weight:600;">${it.returnedQty || 0}</td>
+                </tr>`).join('')}
+            </tbody></table>
+        `;
+        const hasReturnable = grn.items.some(it => (it.returnedQty || 0) < it.qty);
+        if (hasReturnable) {
+            actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;color:#EF4444;border-color:rgba(239,68,68,0.3);" onclick="showReturnForm('grn','${grn.id}')">\u21A9 Create Return</button>`;
+        }
+        if (grn.status === 'unpaid') {
+            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="markAsPaid('grn','${grn.id}');">\u2705 Mark as Paid</button>`;
+        }
+        actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
+
+    } else if (type === 'salesReturn') {
+        const sr = mockDB.salesReturns.find(r => r.id === id);
+        if (!sr) return;
+        titleEl.innerText = `Sales Return: ${sr.id}`;
+        contentEl.innerHTML = `
+            <div style="margin-bottom:20px;">
+                <p style="color:var(--text-secondary);margin-bottom:4px;">Original Invoice: <strong style="color:var(--input-focus);">${sr.invoiceId}</strong></p>
+                <p style="color:var(--text-secondary);margin-bottom:4px;">Customer: <strong>${sr.customerName}</strong></p>
+                <p style="color:var(--text-secondary);">Date: <strong>${sr.date}</strong></p>
+            </div>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Qty Returned</th><th>Price</th><th>Refund</th>
+            </tr></thead><tbody>
+                ${sr.items.map(it => `<tr>
+                    <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                    <td>${it.price.toFixed(2)}</td><td style="color:#EF4444;font-weight:600;">-${it.total.toFixed(2)}</td>
+                </tr>`).join('')}
+            </tbody></table>
+            <p style="text-align:right;margin-top:15px;font-size:1.2rem;font-weight:700;color:#EF4444;">Total Refund: -${sr.totalRefund.toFixed(2)}</p>
+        `;
+        actionsEl.innerHTML = `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
+
+    } else if (type === 'purchaseReturn') {
+        const pr = mockDB.purchaseReturns.find(r => r.id === id);
+        if (!pr) return;
+        titleEl.innerText = `Purchase Return: ${pr.id}`;
+        contentEl.innerHTML = `
+            <div style="margin-bottom:20px;">
+                <p style="color:var(--text-secondary);margin-bottom:4px;">Original GRN: <strong style="color:#10B981;">${pr.grnId}</strong></p>
+                <p style="color:var(--text-secondary);margin-bottom:4px;">Supplier: <strong>${pr.supplierName}</strong></p>
+                <p style="color:var(--text-secondary);">Date: <strong>${pr.date}</strong></p>
+            </div>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Qty Returned</th><th>Unit Cost</th><th>Refund</th>
+            </tr></thead><tbody>
+                ${pr.items.map(it => `<tr>
+                    <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                    <td>${it.cost.toFixed(2)}</td><td style="color:#EF4444;font-weight:600;">-${it.total.toFixed(2)}</td>
+                </tr>`).join('')}
+            </tbody></table>
+            <p style="text-align:right;margin-top:15px;font-size:1.2rem;font-weight:700;color:#EF4444;">Total Refund: -${pr.totalRefund.toFixed(2)}</p>
+        `;
+        actionsEl.innerHTML = `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
+    }
+}
+
+// === RETURN FORM (Partial Item/Qty support) ===
+function showReturnForm(type, id) {
+    const contentEl = document.getElementById('tx-modal-content');
+    const actionsEl = document.getElementById('tx-modal-actions');
+    const titleEl = document.getElementById('tx-modal-title');
+    if (!contentEl || !actionsEl || !titleEl) return;
+
+    if (type === 'invoice') {
+        const inv = mockDB.invoices.find(i => i.id === id);
+        if (!inv) return;
+        titleEl.innerText = `\u21A9 Return from Invoice: ${inv.id}`;
+        contentEl.innerHTML = `
+            <p style="color:var(--text-secondary);margin-bottom:15px;">Enter the quantity to return for each item. Leave at <strong>0</strong> to skip.</p>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Sold</th><th>Already Returned</th><th>Returnable</th><th width="120">Return Qty</th>
+            </tr></thead><tbody>
+                ${inv.items.map((it, idx) => {
+                    const maxRet = it.qty - (it.returnedQty || 0);
+                    return `<tr>
+                        <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                        <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};">${it.returnedQty || 0}</td>
+                        <td style="font-weight:600;">${maxRet}</td>
+                        <td><input type="number" class="glass-input num-input return-qty-input" data-idx="${idx}" min="0" max="${maxRet}" value="0" style="width:80px;text-align:center;height:38px;" ${maxRet === 0 ? 'disabled' : ''}></td>
+                    </tr>`;
+                }).join('')}
+            </tbody></table>
+        `;
+        actionsEl.innerHTML = `
+            <button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="openTxModal('invoice','${inv.id}');">\u2190 Back</button>
+            <button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#EF4444,#DC2626);box-shadow:0 10px 20px rgba(239,68,68,0.3);" onclick="processReturn('invoice','${inv.id}');">\u21A9 Process Return</button>
+        `;
+    } else if (type === 'grn') {
+        const grn = mockDB.grns.find(g => g.id === id);
+        if (!grn) return;
+        titleEl.innerText = `\u21A9 Return from GRN: ${grn.id}`;
+        contentEl.innerHTML = `
+            <p style="color:var(--text-secondary);margin-bottom:15px;">Enter the quantity to return for each item. Leave at <strong>0</strong> to skip.</p>
+            <table class="invoice-table"><thead><tr>
+                <th>Part No</th><th>Item</th><th>Received</th><th>Already Returned</th><th>Returnable</th><th width="120">Return Qty</th>
+            </tr></thead><tbody>
+                ${grn.items.map((it, idx) => {
+                    const maxRet = it.qty - (it.returnedQty || 0);
+                    return `<tr>
+                        <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
+                        <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};">${it.returnedQty || 0}</td>
+                        <td style="font-weight:600;">${maxRet}</td>
+                        <td><input type="number" class="glass-input num-input return-qty-input" data-idx="${idx}" min="0" max="${maxRet}" value="0" style="width:80px;text-align:center;height:38px;" ${maxRet === 0 ? 'disabled' : ''}></td>
+                    </tr>`;
+                }).join('')}
+            </tbody></table>
+        `;
+        actionsEl.innerHTML = `
+            <button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="openTxModal('grn','${grn.id}');">\u2190 Back</button>
+            <button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#EF4444,#DC2626);box-shadow:0 10px 20px rgba(239,68,68,0.3);" onclick="processReturn('grn','${grn.id}');">\u21A9 Process Return</button>
+        `;
+    }
+}
+
+// === PROCESS RETURN ===
+function processReturn(type, id) {
+    const inputs = document.querySelectorAll('.return-qty-input');
+    let hasReturn = false;
+    const returnItems = [];
+
+    if (type === 'invoice') {
+        const inv = mockDB.invoices.find(i => i.id === id);
+        if (!inv) return;
+
+        inputs.forEach(inp => {
+            const idx = parseInt(inp.dataset.idx);
+            const retQty = parseInt(inp.value) || 0;
+            const maxRet = inv.items[idx].qty - (inv.items[idx].returnedQty || 0);
+            if (retQty > 0 && retQty <= maxRet) {
+                hasReturn = true;
+                returnItems.push({
+                    partNo: inv.items[idx].partNo,
+                    name: inv.items[idx].name,
+                    qty: retQty,
+                    price: inv.items[idx].price,
+                    total: retQty * inv.items[idx].price
+                });
+                inv.items[idx].returnedQty = (inv.items[idx].returnedQty || 0) + retQty;
+                // Restore stock
+                const dbItem = mockDB.items.find(i => i.partNo === inv.items[idx].partNo);
+                if (dbItem) dbItem.stock = (dbItem.stock || 0) + retQty;
+            } else if (retQty > maxRet) {
+                alert(`Cannot return ${retQty} of ${inv.items[idx].name}. Max returnable: ${maxRet}`);
+            }
+        });
+
+        if (!hasReturn) { alert('Please enter a return quantity for at least one item.'); return; }
+
+        const totalRefund = returnItems.reduce((s, it) => s + it.total, 0);
+        const retId = `SR-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(mockDB.salesReturns.length + 1).padStart(3,'0')}`;
+
+        mockDB.salesReturns.push({
+            id: retId,
+            date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+            invoiceId: inv.id,
+            customerName: inv.customerName,
+            items: returnItems,
+            totalRefund
+        });
+
+        saveDB();
+        alert(`\u2705 Sales Return processed!\nReturn No: ${retId}\nRefund: ${totalRefund.toFixed(2)}`);
+        closeTxModal();
+        renderHistory('salesReturns');
+
+    } else if (type === 'grn') {
+        const grn = mockDB.grns.find(g => g.id === id);
+        if (!grn) return;
+
+        inputs.forEach(inp => {
+            const idx = parseInt(inp.dataset.idx);
+            const retQty = parseInt(inp.value) || 0;
+            const maxRet = grn.items[idx].qty - (grn.items[idx].returnedQty || 0);
+            if (retQty > 0 && retQty <= maxRet) {
+                hasReturn = true;
+                returnItems.push({
+                    partNo: grn.items[idx].partNo,
+                    name: grn.items[idx].name,
+                    qty: retQty,
+                    cost: grn.items[idx].cost,
+                    total: retQty * grn.items[idx].cost
+                });
+                grn.items[idx].returnedQty = (grn.items[idx].returnedQty || 0) + retQty;
+                // Deduct from stock
+                const dbItem = mockDB.items.find(i => i.partNo === grn.items[idx].partNo);
+                if (dbItem) dbItem.stock = (dbItem.stock || 0) - retQty;
+            } else if (retQty > maxRet) {
+                alert(`Cannot return ${retQty} of ${grn.items[idx].name}. Max returnable: ${maxRet}`);
+            }
+        });
+
+        if (!hasReturn) { alert('Please enter a return quantity for at least one item.'); return; }
+
+        const totalRefund = returnItems.reduce((s, it) => s + it.total, 0);
+        const retId = `PR-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${String(mockDB.purchaseReturns.length + 1).padStart(3,'0')}`;
+
+        mockDB.purchaseReturns.push({
+            id: retId,
+            date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+            grnId: grn.id,
+            supplierName: grn.supplierName,
+            items: returnItems,
+            totalRefund
+        });
+
+        saveDB();
+        alert(`\u2705 Purchase Return processed!\nReturn No: ${retId}\nRefund: ${totalRefund.toFixed(2)}`);
+        closeTxModal();
+        renderHistory('purchaseReturns');
+    }
+}
+
+// === MARK AS PAID ===
+function markAsPaid(type, id) {
+    if (type === 'invoice') {
+        const inv = mockDB.invoices.find(i => i.id === id);
+        if (!inv) return;
+        if (confirm(`Mark Invoice ${inv.id} as PAID?`)) {
+            inv.status = 'paid';
+            saveDB();
+            alert(`\u2705 Invoice ${inv.id} marked as Paid.`);
+            openTxModal('invoice', id);
+        }
+    } else if (type === 'grn') {
+        const grn = mockDB.grns.find(g => g.id === id);
+        if (!grn) return;
+        if (confirm(`Mark GRN ${grn.id} as PAID?`)) {
+            grn.status = 'paid';
+            saveDB();
+            alert(`\u2705 GRN ${grn.id} marked as Paid.`);
+            openTxModal('grn', id);
+        }
+    }
+}
+
+function closeTxModal() {
+    const modal = document.getElementById('tx-modal-wrapper');
+    if (modal) modal.style.display = 'none';
+    // Refresh the history table behind the modal so status changes are visible
+    if (currentHistoryType) renderHistory(currentHistoryType);
+}
+
+// Close tx modal on X click
+const txModalCloseBtn = document.getElementById('tx-modal-close');
+if (txModalCloseBtn) txModalCloseBtn.addEventListener('click', closeTxModal);
 
 // Initialize invoice AFTER all global const declarations (avoids TDZ ReferenceError)
 initInvoiceNumber();
