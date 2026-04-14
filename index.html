@@ -472,8 +472,8 @@
             </div>
 
             <!-- Report View -->
-            <div id="report-view" class="content-view management-panel glass-panel">
-                <div class="management-header">
+            <div id="report-view" class="content-view invoice-panel glass-panel">
+                <div class="invoice-header">
                     <h2 id="report-title">Report</h2>
                     <div>
                         <button class="login-btn generate-btn" id="print-report-btn" style="padding: 8px 16px; margin-right: 10px;">
@@ -495,18 +495,16 @@
                     <button class="login-btn" style="padding: 0 20px; border-radius: 10px; width: auto; margin-top: 0;">Filter</button>
                 </div>
 
-                <div class="management-content">
-                    <table class="invoice-table">
-                        <thead>
-                            <tr id="report-table-header">
-                                <!-- Injected dynamically -->
-                            </tr>
-                        </thead>
-                        <tbody id="report-table-body">
+                <table class="invoice-table">
+                    <thead>
+                        <tr id="report-table-header">
                             <!-- Injected dynamically -->
-                        </tbody>
-                    </table>
-                </div>
+                        </tr>
+                    </thead>
+                    <tbody id="report-table-body">
+                        <!-- Injected dynamically -->
+                    </tbody>
+                </table>
             </div>
         </main>
     </div>
