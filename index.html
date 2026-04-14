@@ -439,6 +439,96 @@
                 </div>
             </div>
 
+            <!-- Add Stock View (Goods Received Note) -->
+            <div id="add-stock-view" class="content-view invoice-panel glass-panel">
+                <div class="invoice-header">
+                    <div>
+                        <h2 style="color: #10B981; font-size: 1.8rem; font-weight: 700;">Goods Received Note</h2>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">Add stock received from supplier</p>
+                    </div>
+                    <div class="invoice-meta">
+                        <span id="grn-number">GRN-20260414-001</span>
+                        <span id="grn-date">Date: 14 Apr 2026</span>
+                    </div>
+                </div>
+
+                <!-- Supplier & Reference -->
+                <div class="invoice-customer-section">
+                    <div class="input-group" style="flex: 1;">
+                        <label>Supplier</label>
+                        <select id="grn-supplier" class="glass-input custom-select">
+                            <option value="">-- Select Supplier --</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label>Supplier Invoice / Ref No.</label>
+                        <input type="text" id="grn-ref" class="glass-input" placeholder="e.g. GS-9022" style="height: 48px;">
+                    </div>
+                    <div class="input-group" style="flex: 0.6;">
+                        <label>Payment Terms</label>
+                        <select id="grn-payment-terms" class="glass-input custom-select">
+                            <option value="credit">Credit</option>
+                            <option value="cash">Cash</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Item Entry Row -->
+                <div class="item-entry-section">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="grn-part-search" placeholder="Search Part No. or Name..."
+                            class="glass-input" autocomplete="off">
+                        <div id="grn-autocomplete-dropdown" class="dropdown-content"></div>
+                    </div>
+                    <input type="number" id="grn-entry-qty" placeholder="Qty" step="1" class="glass-input num-input"
+                        style="flex: 0.5;" disabled>
+                    <input type="number" id="grn-entry-cost" placeholder="Unit Cost" step="0.01" class="glass-input num-input"
+                        style="flex: 1;" disabled>
+                    <button id="grn-add-btn" class="add-item-btn glass-btn-soft" style="align-self: center;" disabled>Add (Enter)</button>
+                </div>
+
+                <!-- Items Table -->
+                <table class="invoice-table" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Part No</th>
+                            <th>Item Name</th>
+                            <th width="80">Qty</th>
+                            <th width="130">Unit Cost</th>
+                            <th width="130">Total Cost</th>
+                            <th width="50"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="grn-items">
+                        <!-- Added items appear here -->
+                    </tbody>
+                </table>
+
+                <!-- Summary -->
+                <div class="invoice-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="grn-subtotal">0.00</span>
+                    </div>
+                    <div class="summary-row total-row">
+                        <span>Total Cost:</span>
+                        <span id="grn-total" style="color: #10B981;">0.00</span>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="invoice-actions">
+                    <button class="glass-btn-soft cancel-btn" id="close-stock-btn">Cancel</button>
+                    <button class="login-btn" id="save-grn-btn" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); box-shadow: 0 10px 20px rgba(16,185,129,0.3);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Save & Receive Stock
+                    </button>
+                </div>
+            </div>
+
             <!-- Management View -->
             <div id="management-view" class="content-view management-panel glass-panel">
                 <div class="management-sidebar glass-panel-inner">

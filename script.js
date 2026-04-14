@@ -179,6 +179,232 @@ if (newInvoiceBtn && closeInvoiceBtn) {
     });
 }
 
+// === Add Stock / Goods Received Note (GRN) Logic ===
+const addStockView = document.getElementById('add-stock-view');
+const closeStockBtn = document.getElementById('close-stock-btn');
+const saveGrnBtn = document.getElementById('save-grn-btn');
+
+function generateGrnNumber() {
+    let lastGrnId = parseInt(localStorage.getItem('lastGrnId') || '0') + 1;
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return `GRN-${dateStr}-${lastGrnId.toString().padStart(3, '0')}`;
+}
+
+function initGrn() {
+    const grnNumberEl = document.getElementById('grn-number');
+    const grnDateEl = document.getElementById('grn-date');
+    if (grnNumberEl) grnNumberEl.innerText = generateGrnNumber();
+    if (grnDateEl) {
+        const now = new Date();
+        grnDateEl.innerText = `Date: ${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+    }
+
+    // Populate supplier dropdown from mockDB.creditors
+    const supplierSelect = document.getElementById('grn-supplier');
+    if (supplierSelect) {
+        supplierSelect.innerHTML = '<option value="">-- Select Supplier --</option>' +
+            mockDB.creditors.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    // Reset the table and totals
+    const grnItems = document.getElementById('grn-items');
+    if (grnItems) grnItems.innerHTML = '';
+    calculateGrnTotals();
+
+    // Reset search fields
+    const partSearch = document.getElementById('grn-part-search');
+    const entryQty = document.getElementById('grn-entry-qty');
+    const entryCost = document.getElementById('grn-entry-cost');
+    const addBtn = document.getElementById('grn-add-btn');
+    if (partSearch) partSearch.value = '';
+    if (entryQty) { entryQty.value = ''; entryQty.disabled = true; }
+    if (entryCost) { entryCost.value = ''; entryCost.disabled = true; }
+    if (addBtn) addBtn.disabled = true;
+    const refInput = document.getElementById('grn-ref');
+    if (refInput) refInput.value = '';
+}
+
+function calculateGrnTotals() {
+    let total = 0;
+    const grnItems = document.getElementById('grn-items');
+    if (!grnItems) return;
+    grnItems.querySelectorAll('tr').forEach(row => {
+        const qty = parseFloat(row.querySelector('.grn-qty')?.value) || 0;
+        const cost = parseFloat(row.querySelector('.grn-cost')?.value) || 0;
+        const rowTotal = qty * cost;
+        const totalCell = row.querySelector('.grn-total');
+        if (totalCell) totalCell.innerText = rowTotal.toFixed(2);
+        total += rowTotal;
+    });
+    const subtotalEl = document.getElementById('grn-subtotal');
+    const totalEl = document.getElementById('grn-total');
+    if (subtotalEl) subtotalEl.innerText = total.toFixed(2);
+    if (totalEl) totalEl.innerText = total.toFixed(2);
+}
+
+// Open GRN view from Add Product button
+const addProductBtn = document.getElementById('add-product-btn');
+if (addProductBtn) {
+    // Clear the previous click listener set before (override it)
+    const newBtn = addProductBtn.cloneNode(true);
+    addProductBtn.parentNode.replaceChild(newBtn, addProductBtn);
+    newBtn.addEventListener('click', () => {
+        document.querySelector('.content-view.active')?.classList.remove('active');
+        initGrn();
+        setTimeout(() => { addStockView.classList.add('active'); }, 50);
+    });
+}
+
+if (closeStockBtn) {
+    closeStockBtn.addEventListener('click', () => {
+        addStockView.classList.remove('active');
+        setTimeout(() => { dashboardView.classList.add('active'); }, 300);
+    });
+}
+
+if (saveGrnBtn) {
+    saveGrnBtn.addEventListener('click', () => {
+        const supplierEl = document.getElementById('grn-supplier');
+        if (!supplierEl || !supplierEl.value) {
+            alert('Please select a supplier before saving.');
+            return;
+        }
+        const grnItems = document.getElementById('grn-items');
+        if (!grnItems || grnItems.rows.length === 0) {
+            alert('Please add at least one item to receive.');
+            return;
+        }
+
+        // Increment GRN counter
+        let lastGrnId = parseInt(localStorage.getItem('lastGrnId') || '0') + 1;
+        localStorage.setItem('lastGrnId', lastGrnId);
+
+        // Mark items as used in mockDB for inventory tracking
+        grnItems.querySelectorAll('tr').forEach(row => {
+            const partNoCell = row.cells[0]?.innerText;
+            const qty = parseFloat(row.querySelector('.grn-qty')?.value) || 0;
+            const item = mockDB.items.find(i => i.partNo === partNoCell);
+            if (item) {
+                item.stock = (item.stock || 0) + qty;
+                item.isUsed = true;
+            }
+        });
+
+        alert(`✅ Stock received successfully!\nGRN: ${document.getElementById('grn-number')?.innerText}`);
+        addStockView.classList.remove('active');
+        setTimeout(() => { dashboardView.classList.add('active'); }, 300);
+    });
+}
+
+// GRN Part Search Autocomplete
+const grnPartSearch = document.getElementById('grn-part-search');
+const grnDropdown = document.getElementById('grn-autocomplete-dropdown');
+const grnEntryQty = document.getElementById('grn-entry-qty');
+const grnEntryCost = document.getElementById('grn-entry-cost');
+const grnAddBtn = document.getElementById('grn-add-btn');
+const grnItemsTable = document.getElementById('grn-items');
+
+let grnSelectedPart = null;
+
+if (grnPartSearch) {
+    grnPartSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        grnDropdown.innerHTML = '';
+        grnSelectedPart = null;
+        grnEntryQty.disabled = true;
+        grnEntryCost.disabled = true;
+        grnAddBtn.disabled = true;
+
+        if (!query) { grnDropdown.style.display = 'none'; return; }
+
+        const matches = mockDB.items.filter(p =>
+            p.name.toLowerCase().includes(query) || p.partNo.toLowerCase().includes(query)
+        );
+
+        if (matches.length > 0) {
+            grnDropdown.style.display = 'block';
+            matches.forEach(part => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.innerHTML = `<span class="dropdown-item-title">${part.name}</span><span class="dropdown-item-desc">${part.partNo}</span>`;
+                item.addEventListener('click', () => selectGrnPart(part));
+                grnDropdown.appendChild(item);
+            });
+        } else {
+            grnDropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (e.target !== grnPartSearch) grnDropdown.style.display = 'none';
+    });
+
+    function selectGrnPart(part) {
+        grnSelectedPart = part;
+        grnPartSearch.value = part.name;
+        grnEntryCost.value = (parseFloat(part.price) || 0).toFixed(2);
+        grnEntryQty.value = 1;
+        grnEntryQty.disabled = false;
+        grnEntryCost.disabled = false;
+        grnAddBtn.disabled = false;
+        grnDropdown.style.display = 'none';
+        grnEntryQty.focus();
+    }
+
+    function addGrnEntry() {
+        if (!grnSelectedPart) return;
+        const qty = parseFloat(grnEntryQty.value) || 1;
+        const cost = parseFloat(grnEntryCost.value) || 0;
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${grnSelectedPart.partNo}</td>
+            <td>${grnSelectedPart.name}</td>
+            <td><input type="number" class="item-qty glass-input num-input grn-qty" value="${qty}" min="1" style="width:100%;text-align:center;"></td>
+            <td><input type="number" class="item-price glass-input num-input grn-cost" value="${cost.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+            <td class="grn-total">${(qty * cost).toFixed(2)}</td>
+            <td><button class="action-btn text-danger grn-remove-btn">×</button></td>
+        `;
+        grnItemsTable.appendChild(newRow);
+
+        // Reset entry row
+        grnPartSearch.value = '';
+        grnEntryQty.value = '';
+        grnEntryCost.value = '';
+        grnEntryQty.disabled = true;
+        grnEntryCost.disabled = true;
+        grnAddBtn.disabled = true;
+        grnSelectedPart = null;
+        grnPartSearch.focus();
+        calculateGrnTotals();
+    }
+
+    grnAddBtn.addEventListener('click', addGrnEntry);
+
+    [grnPartSearch, grnEntryQty, grnEntryCost].forEach(input => {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (grnSelectedPart) addGrnEntry();
+                else if (input === grnPartSearch && grnDropdown.children.length > 0) grnDropdown.children[0].click();
+            }
+        });
+    });
+}
+
+if (grnItemsTable) {
+    grnItemsTable.addEventListener('input', (e) => {
+        if (e.target.classList.contains('grn-qty') || e.target.classList.contains('grn-cost')) {
+            calculateGrnTotals();
+        }
+    });
+    grnItemsTable.addEventListener('click', (e) => {
+        if (e.target.classList.contains('grn-remove-btn')) {
+            e.target.closest('tr').remove();
+            calculateGrnTotals();
+        }
+    });
+}
+
 // Tax logic based on Customer Selection
 const invoiceCustomerSelect = document.getElementById('invoice-customer');
 const taxRegisteredCheckbox = document.getElementById('tax-registered-checkbox');
