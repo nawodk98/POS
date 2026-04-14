@@ -129,6 +129,32 @@
                     <div class="tree-node is-root">
                         <div class="tree-content">
                             <span class="tree-title">Point of Sale</span>
+                            <button class="action-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="tree-children">
+                            <div class="tree-node">
+                                <div class="tree-content">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">New Invoice</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Invoice History</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Sales Returns</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -160,6 +186,18 @@
                                 <div class="tree-content">
                                     <span class="branch-icon nested">↳</span>
                                     <span class="tree-title">Stock In/Out</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">GRN History</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Purchase Returns</span>
                                 </div>
                             </div>
                         </div>
@@ -372,10 +410,18 @@
                         </select>
                     </div>
 
-                    <label class="remember-me" style="margin-top: 15px;">
+                    <div class="input-group" style="flex: 0.6; margin-left: 15px;">
+                        <label>Payment Terms</label>
+                        <select id="invoice-payment-terms" class="glass-input custom-select">
+                            <option value="cash">Cash</option>
+                            <option value="credit">Credit</option>
+                        </select>
+                    </div>
+
+                    <label class="remember-me" style="margin-top: 15px; margin-left: 15px;">
                         <input type="checkbox" id="tax-registered-checkbox">
                         <span class="checkmark"></span>
-                        Tax Registered Customer
+                        Tax Registered
                     </label>
                 </div>
 
@@ -434,7 +480,7 @@
                             <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
                             <rect x="6" y="14" width="12" height="8"></rect>
                         </svg>
-                        Print Invoice
+                        Save & Print Invoice
                     </button>
                 </div>
             </div>
@@ -596,16 +642,37 @@
                     <!-- Injected debtor detail card -->
                 </div>
 
-                <table class="invoice-table">
-                    <thead>
-                        <tr id="report-table-header">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr id="report-table-header">
+                                <!-- Injected dynamically -->
+                            </tr>
+                        </thead>
+                        <tbody id="report-table-body">
                             <!-- Injected dynamically -->
-                        </tr>
-                    </thead>
-                    <tbody id="report-table-body">
-                        <!-- Injected dynamically -->
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- History View (Invoices, GRN, Returns) -->
+                <div id="history-view" class="content-view management-panel glass-panel">
+                    <div class="management-content" style="flex: 1;">
+                        <div class="management-header">
+                            <h2 id="history-title">Transaction History</h2>
+                        </div>
+
+                        <table class="invoice-table" style="margin-top: 20px;">
+                            <thead>
+                                <tr id="history-table-header">
+                                    <!-- Dynamically populated -->
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <!-- Dynamically populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -625,6 +692,18 @@
                     <button type="submit" class="login-btn" style="padding: 12px 30px; margin-top: 0;">Save Record</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div id="tx-modal-wrapper" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); justify-content: center; align-items: center;">
+        <div class="glass-panel" style="width: 90%; max-width: 800px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative; max-height: 90vh; overflow-y: auto;">
+             <button id="tx-modal-close" style="position: absolute; top: 20px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+             <h3 id="tx-modal-title" style="font-size: 1.5rem; color: var(--input-focus); margin-bottom: 25px;">Transaction Details</h3>
+             <div id="tx-modal-content"></div>
+             <div class="mgmt-actions" style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;" id="tx-modal-actions">
+                  <!-- Actions (Mark Paid, Return) -->
+             </div>
         </div>
     </div>
 
