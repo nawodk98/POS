@@ -102,6 +102,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // === Invoice View Logic ===
 
+// === Global Mock Database ===
+const mockDB = {
+    debtors: [
+        { id: 1, name: 'Acme Corp', address: '123 Main St', phoneNo: '555-0100', taxRegistered: true, creditPeriod: 30, isUsed: true },
+        { id: 2, name: 'John Doe', address: '456 Side St', phoneNo: '555-0200', taxRegistered: false, creditPeriod: 15, isUsed: false }
+    ],
+    creditors: [
+        { id: 1, name: 'Global Supply', address: '789 Ind Ave', phoneNo: '555-0300', taxRegistered: true, creditPeriod: 45, isUsed: true },
+        { id: 2, name: 'Local Parts', address: '321 Town Rd', phoneNo: '555-0400', taxRegistered: false, creditPeriod: 14, isUsed: false }
+    ],
+    items: [
+        { id: 1, partNo: 'O-001', name: 'Premium Oil Filter', category: 'Filters', price: 15.50, isUsed: true },
+        { id: 2, partNo: 'O-002', name: 'Standard Oil Filter', category: 'Filters', price: 8.50, isUsed: false },
+        { id: 3, partNo: 'B-001', name: 'Front Brake Pads', category: 'Brakes', price: 45.00, isUsed: true },
+        { id: 4, partNo: 'B-002', name: 'Rear Brake Pads', category: 'Brakes', price: 40.00, isUsed: false },
+        { id: 5, partNo: 'S-001', name: 'Iridium Spark Plug', category: 'Ignition', price: 12.00, isUsed: false },
+        { id: 6, partNo: 'A-001', name: 'Cabin Air Filter', category: 'Filters', price: 20.00, isUsed: false },
+        { id: 7, partNo: 'W-001', name: 'Wiper Blades 22"', category: 'Accessories', price: 18.00, isUsed: false }
+    ],
+    users: [
+        { id: 1, username: 'admin', role: 'Admin', isUsed: true },
+        { id: 2, username: 'cashier1', role: 'Cashier', isUsed: false }
+    ]
+};
+
 // === Invoice Number Generator ===
 function generateInvoiceNumber(currentNum) {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -227,17 +252,6 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
     // When checkbox is toggled manually
     taxRegisteredCheckbox.addEventListener('change', updateInvoiceDisplay);
 
-    // Mock Parts Database
-    const partsDatabase = [
-        { partNo: 'O-001', name: 'Premium Oil Filter', price: 15.50 },
-        { partNo: 'O-002', name: 'Standard Oil Filter', price: 8.50 },
-        { partNo: 'B-001', name: 'Front Brake Pads', price: 45.00 },
-        { partNo: 'B-002', name: 'Rear Brake Pads', price: 40.00 },
-        { partNo: 'S-001', name: 'Iridium Spark Plug', price: 12.00 },
-        { partNo: 'A-001', name: 'Cabin Air Filter', price: 20.00 },
-        { partNo: 'W-001', name: 'Wiper Blades 22"', price: 18.00 }
-    ];
-
     const partSearchInput = document.getElementById('part-search-input');
     const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
     const entryQty = document.getElementById('entry-qty');
@@ -261,7 +275,7 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
                 return;
             }
 
-            const matches = partsDatabase.filter(part => 
+            const matches = mockDB.items.filter(part => 
                 part.name.toLowerCase().includes(query) || 
                 part.partNo.toLowerCase().includes(query)
             );
@@ -295,7 +309,7 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
         function selectPart(part) {
             selectedPart = part;
             partSearchInput.value = part.name;
-            entryPrice.value = part.price.toFixed(2);
+            entryPrice.value = (parseFloat(part.price) || 0).toFixed(2);
             entryQty.value = 1;
             
             entryQty.disabled = false;
@@ -396,24 +410,6 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
 }
 
 // === Management (CRUD) Logic ===
-const mockDB = {
-    debtors: [
-        { id: 1, name: 'Acme Corp', address: '123 Main St', phoneNo: '555-0100', taxRegistered: true, creditPeriod: 30, isUsed: true },
-        { id: 2, name: 'John Doe', address: '456 Side St', phoneNo: '555-0200', taxRegistered: false, creditPeriod: 15, isUsed: false }
-    ],
-    creditors: [
-        { id: 1, name: 'Global Supply', address: '789 Ind Ave', phoneNo: '555-0300', taxRegistered: true, creditPeriod: 45, isUsed: true },
-        { id: 2, name: 'Local Parts', address: '321 Town Rd', phoneNo: '555-0400', taxRegistered: false, creditPeriod: 14, isUsed: false }
-    ],
-    items: [
-        { id: 1, partNo: 'O-001', name: 'Premium Oil Filter', category: 'Filters', price: 15.50, isUsed: true },
-        { id: 2, partNo: 'B-001', name: 'Front Brake Pads', category: 'Brakes', price: '', isUsed: false }
-    ],
-    users: [
-        { id: 1, username: 'admin', role: 'Admin', isUsed: true },
-        { id: 2, username: 'cashier1', role: 'Cashier', isUsed: false }
-    ]
-};
 
 const settingsBtn = document.getElementById('settings-btn');
 const managementView = document.getElementById('management-view');
