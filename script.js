@@ -101,6 +101,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // === Invoice View Logic ===
+
+// === Invoice Number Generator ===
+function generateInvoiceNumber(currentNum) {
+    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return `INV-${dateStr}-${currentNum.toString().padStart(3, '0')}`;
+}
+
+function initInvoiceNumber() {
+    let lastInvoiceId = localStorage.getItem('lastInvoiceId');
+    if (!lastInvoiceId) {
+        lastInvoiceId = 1;
+        localStorage.setItem('lastInvoiceId', lastInvoiceId);
+    }
+    
+    const invoiceNumberEl = document.getElementById('invoice-number');
+    const invoiceDateEl = document.getElementById('invoice-date');
+    
+    if (invoiceNumberEl) {
+        invoiceNumberEl.innerText = generateInvoiceNumber(parseInt(lastInvoiceId));
+    }
+    
+    if (invoiceDateEl) {
+        const now = new Date();
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        invoiceDateEl.innerText = `Date: ${now.toLocaleDateString('en-GB', options)}`;
+    }
+}
+
+// Initialize on load
+initInvoiceNumber();
+
 const dashboardView = document.getElementById('dashboard-view');
 const invoiceView = document.getElementById('invoice-view');
 const newInvoiceBtn = document.getElementById('new-invoice-btn');
@@ -113,6 +144,7 @@ if (newInvoiceBtn && closeInvoiceBtn) {
 
     newInvoiceBtn.addEventListener('click', () => {
         dashboardView.classList.remove('active');
+        initInvoiceNumber();
         setTimeout(() => { invoiceView.classList.add('active'); }, 300);
     });
 
@@ -345,6 +377,20 @@ if (invoiceCustomerSelect && taxRegisteredCheckbox) {
     if (printBtn) {
         printBtn.addEventListener('click', () => {
             window.print();
+            
+            // Increment the invoice number after printing to ensure it's a unique primary key
+            let lastInvoiceId = parseInt(localStorage.getItem('lastInvoiceId') || '1');
+            lastInvoiceId++;
+            localStorage.setItem('lastInvoiceId', lastInvoiceId);
+            
+            // Re-initialize for the next invoice
+            initInvoiceNumber();
+            
+            // Reset the invoice table and totals
+            if (invoiceItemsTable) {
+                invoiceItemsTable.innerHTML = '';
+                calculateTotals();
+            }
         });
     }
 }
