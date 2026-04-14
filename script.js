@@ -726,32 +726,127 @@ const mockReports = {
     }
 };
 
+// Mock data for debtor payable transactions (keyed by debtor id)
+const debtorTransactions = {
+    1: [ // Acme Corp
+        { date: "01 Apr 2026", invoiceNo: "INV-20260401-001", description: "Spare Parts", amount: "$177.00", dueDate: "01 May 2026", status: "Pending" },
+        { date: "10 Apr 2026", invoiceNo: "INV-20260410-005", description: "Oil Filters x10", amount: "$155.00", dueDate: "10 May 2026", status: "Pending" }
+    ],
+    2: [ // John Doe
+        { date: "02 Apr 2026", invoiceNo: "INV-20260402-002", description: "Brake Pads", amount: "$45.50", dueDate: "02 May 2026", status: "Pending" }
+    ]
+};
+
+function renderDebtorCard(debtor) {
+    const card = document.getElementById('report-debtor-card');
+    if (!card || !debtor) { if (card) card.style.display = 'none'; return; }
+    
+    const transactions = debtorTransactions[debtor.id] || [];
+    const totalDue = transactions.reduce((sum, t) => sum + parseFloat(t.amount.replace('$', '').replace(',', '')), 0);
+    
+    card.style.display = 'block';
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+            <div>
+                <h3 style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px;">${debtor.name}</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 4px;">📍 ${debtor.address}</p>
+                <p style="color: var(--text-secondary); margin-bottom: 4px;">📞 ${debtor.phoneNo}</p>
+                <p style="color: var(--text-secondary);">Credit Period: <strong>${debtor.creditPeriod} days</strong> &nbsp;|&nbsp; Tax Registered: <strong>${debtor.taxRegistered ? 'Yes' : 'No'}</strong></p>
+            </div>
+            <div style="text-align: right; background: var(--input-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 16px 24px;">
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 4px;">TOTAL OUTSTANDING</p>
+                <p style="font-size: 2rem; font-weight: 700; color: #10B981;">$${totalDue.toFixed(2)}</p>
+            </div>
+        </div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Invoice No</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${transactions.length > 0 ? transactions.map(t => `
+                    <tr>
+                        <td>${t.date}</td>
+                        <td>${t.invoiceNo}</td>
+                        <td>${t.description}</td>
+                        <td style="font-weight: 600; color: #10B981;">${t.amount}</td>
+                        <td>${t.dueDate}</td>
+                        <td><span style="background: rgba(251,191,36,0.15); color: #F59E0B; padding: 3px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${t.status}</span></td>
+                    </tr>
+                `).join('') : '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary); padding: 30px;">No transactions found.</td></tr>'}
+            </tbody>
+        </table>
+    `;
+    
+    // Hide main report table when card is showing
+    const tbl = document.querySelector('#report-view .invoice-table:not(#report-debtor-card table)');
+    if (tbl) tbl.style.display = transactions.length > 0 || debtor ? 'none' : '';
+}
+
 function renderReport(reportId) {
     const reportList = mockReports[reportId];
     if (!reportList) return;
     
     // Deactivate current view
     const activeView = document.querySelector('.content-view.active');
-    if (activeView) {
-        activeView.classList.remove('active');
-    }
+    if (activeView) activeView.classList.remove('active');
     
-    // Setup Report UI
+    // Setup Report title
     reportTitle.innerHTML = reportList.title;
     
-    if (reportTableHeader) {
-        reportTableHeader.innerHTML = reportList.headers.map(h => `<th>${h}</th>`).join('');
+    const debtorSelector = document.getElementById('report-debtor-selector');
+    const debtorCard = document.getElementById('report-debtor-card');
+    const mainTable = document.querySelector('#report-view > .invoice-table');
+    
+    if (reportId === 'ap_summary') {
+        // Show debtor selector, hide date filters and main table
+        if (debtorSelector) debtorSelector.style.display = 'block';
+        if (debtorCard) { debtorCard.style.display = 'none'; debtorCard.innerHTML = ''; }
+        if (mainTable) mainTable.style.display = 'none';
+        
+        // Populate dropdown from mockDB.debtors
+        const debtorSelectEl = document.getElementById('debtor-select');
+        if (debtorSelectEl) {
+            debtorSelectEl.innerHTML = '<option value="">-- Select a Debtor --</option>' +
+                mockDB.debtors.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            
+            // Remove old listener to prevent stacking
+            const newSelect = debtorSelectEl.cloneNode(true);
+            debtorSelectEl.parentNode.replaceChild(newSelect, debtorSelectEl);
+            
+            newSelect.addEventListener('change', (e) => {
+                const selectedId = parseInt(e.target.value);
+                if (!selectedId) {
+                    if (debtorCard) { debtorCard.style.display = 'none'; debtorCard.innerHTML = ''; }
+                    return;
+                }
+                const debtor = mockDB.debtors.find(d => d.id === selectedId);
+                renderDebtorCard(debtor);
+            });
+        }
+    } else {
+        // Normal report: show date filters and main table, hide debtor parts
+        if (debtorSelector) debtorSelector.style.display = 'none';
+        if (debtorCard) { debtorCard.style.display = 'none'; debtorCard.innerHTML = ''; }
+        if (mainTable) mainTable.style.display = '';
+        
+        if (reportTableHeader) {
+            reportTableHeader.innerHTML = reportList.headers.map(h => `<th>${h}</th>`).join('');
+        }
+        if (reportTableBody) {
+            reportTableBody.innerHTML = reportList.data.map(row =>
+                `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+            ).join('');
+        }
     }
     
-    if (reportTableBody) {
-        reportTableBody.innerHTML = reportList.data.map(row => 
-            `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
-        ).join('');
-    }
-    
-    if (reportView) {
-        reportView.classList.add('active');
-    }
+    if (reportView) reportView.classList.add('active');
 }
 
 // Attach listeners to sidebar tree nodes that have data-report

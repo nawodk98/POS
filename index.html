@@ -488,11 +488,22 @@
                     </div>
                 </div>
 
-                <div class="report-filters" style="display: flex; gap: 15px; margin-top: 15px; margin-bottom: 20px;">
+                <div class="report-filters" id="report-date-filters" style="display: flex; gap: 15px; margin-top: 15px; margin-bottom: 10px;">
                     <input type="date" class="glass-input" style="flex: 1;" value="2026-04-01">
                     <span style="align-self: center; color: var(--text-secondary);">to</span>
                     <input type="date" class="glass-input" style="flex: 1;" value="2026-04-30">
                     <button class="login-btn" style="padding: 0 20px; border-radius: 10px; width: auto; margin-top: 0;">Filter</button>
+                </div>
+
+                <!-- Debtor Selector (only shown for Accounts Payable Summary) -->
+                <div id="report-debtor-selector" style="display: none; margin-bottom: 20px;">
+                    <select id="debtor-select" class="glass-input custom-select">
+                        <option value="">-- Select a Debtor --</option>
+                    </select>
+                </div>
+
+                <div id="report-debtor-card" style="display: none; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                    <!-- Injected debtor detail card -->
                 </div>
 
                 <table class="invoice-table">
