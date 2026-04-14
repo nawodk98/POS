@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
-        const loginBtn = document.querySelector('.login-btn');
+        const loginBtn = document.querySelector('#login-form .login-btn');
         const originalContent = loginBtn.innerHTML;
         loginBtn.innerHTML = '<span>Authenticating...</span><svg class="btn-icon" style="animation: spin 1s linear infinite;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>';
         loginBtn.style.opacity = '0.9';
@@ -242,18 +242,14 @@ function calculateGrnTotals() {
     if (totalEl) totalEl.innerText = total.toFixed(2);
 }
 
-// Open GRN view from Add Product button
-const addProductBtn = document.getElementById('add-product-btn');
-if (addProductBtn) {
-    // Clear the previous click listener set before (override it)
-    const newBtn = addProductBtn.cloneNode(true);
-    addProductBtn.parentNode.replaceChild(newBtn, addProductBtn);
-    newBtn.addEventListener('click', () => {
+// Open GRN view from Add Product button — bound after DOM ready
+document.addEventListener('click', (e) => {
+    if (e.target.closest('#add-product-btn')) {
         document.querySelector('.content-view.active')?.classList.remove('active');
         initGrn();
         setTimeout(() => { addStockView.classList.add('active'); }, 50);
-    });
-}
+    }
+});
 
 if (closeStockBtn) {
     closeStockBtn.addEventListener('click', () => {
