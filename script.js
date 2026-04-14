@@ -607,3 +607,134 @@ function resetMgmtForm() {
     mgmtFormTitle.innerText = 'Add New';
     if (crudModalWrapper) crudModalWrapper.style.display = 'none';
 }
+
+// === Report View Logic ===
+const reportView = document.getElementById('report-view');
+const reportTitle = document.getElementById('report-title');
+const reportTableHeader = document.getElementById('report-table-header');
+const reportTableBody = document.getElementById('report-table-body');
+const closeReportBtn = document.getElementById('close-report-btn');
+const printReportBtn = document.getElementById('print-report-btn');
+
+if (closeReportBtn && reportView) {
+    closeReportBtn.addEventListener('click', () => {
+        reportView.classList.remove('active');
+        document.getElementById('dashboard-view').classList.add('active');
+    });
+}
+
+if (printReportBtn) {
+    printReportBtn.addEventListener('click', () => {
+        window.print();
+    });
+}
+
+const mockReports = {
+    periodic_sales: {
+        title: "Periodic Sales Report",
+        headers: ["Date", "Invoice No", "Customer", "Total Amount"],
+        data: [
+            ["01 Apr 2026", "INV-20260401-001", "Acme Corp", "$150.00"],
+            ["02 Apr 2026", "INV-20260402-002", "John Doe", "$45.50"],
+            ["05 Apr 2026", "INV-20260405-003", "Walk-in", "$12.00"]
+        ]
+    },
+    tax_liability: {
+        title: "Tax Liability Report",
+        headers: ["Date", "Invoice No", "Taxable Amount", "Tax (18%)"],
+        data: [
+            ["01 Apr 2026", "INV-20260401-001", "$150.00", "$27.00"],
+            ["08 Apr 2026", "INV-20260408-004", "$300.00", "$54.00"]
+        ]
+    },
+    ap_supplier: {
+        title: "Accounts Payable by Supplier",
+        headers: ["Date", "Supplier", "Invoice Ref", "Amount", "Status"],
+        data: [
+            ["28 Mar 2026", "Global Supply", "GS-9021", "$1,200.00", "Pending"],
+            ["10 Apr 2026", "Local Parts", "LP-441", "$340.00", "Pending"]
+        ]
+    },
+    ar_customer: {
+        title: "Accounts Receivable by Customer",
+        headers: ["Date", "Customer", "Invoice No", "Amount Due", "Due Date"],
+        data: [
+            ["01 Apr 2026", "Acme Corp", "INV-20260401-001", "$177.00", "01 May 2026"],
+            ["02 Apr 2026", "John Doe", "INV-20260402-002", "$45.50", "02 May 2026"]
+        ]
+    },
+    ap_summary: {
+        title: "Accounts Payable Summary",
+        headers: ["Supplier", "Total Owed", "Overdue"],
+        data: [
+            ["Global Supply", "$1,200.00", "$0.00"],
+            ["Local Parts", "$340.00", "$0.00"]
+        ]
+    },
+    ar_summary: {
+        title: "Accounts Receivable Summary",
+        headers: ["Customer", "Total Due", "Overdue"],
+        data: [
+            ["Acme Corp", "$177.00", "$0.00"],
+            ["John Doe", "$45.50", "$0.00"]
+        ]
+    },
+    inventory_summary: {
+        title: "Inventory Summary",
+        headers: ["Part No", "Item Name", "Qty in Stock", "Avg Cost", "Total Value"],
+        data: [
+            ["O-001", "Premium Oil Filter", "45", "$10.00", "$450.00"],
+            ["B-001", "Front Brake Pads", "12", "$30.00", "$360.00"],
+            ["S-001", "Iridium Spark Plug", "100", "$6.50", "$650.00"],
+            ["A-001", "Cabin Air Filter", "30", "$12.00", "$360.00"],
+            ["W-001", "Wiper Blades 22\"", "25", "$9.00", "$225.00"]
+        ]
+    },
+    profit_loss: {
+        title: "Profit & Loss",
+        headers: ["Category", "Amount"],
+        data: [
+            ["Sales Revenue", "<span style='color: #10B981'>$5,400.00</span>"],
+            ["Cost of Goods Sold (COGS)", "<span style='color: var(--text-danger)'>-$2,100.00</span>"],
+            ["<b>Gross Profit</b>", "<b><span style='color: #10B981'>$3,300.00</span></b>"],
+            ["Operating Expenses", "<span style='color: var(--text-danger)'>-$800.00</span>"],
+            ["<b>Net Profit</b>", "<b><span style='color: #10B981'>$2,500.00</span></b>"]
+        ]
+    }
+};
+
+function renderReport(reportId) {
+    const reportList = mockReports[reportId];
+    if (!reportList) return;
+    
+    // Deactivate current view
+    const activeView = document.querySelector('.content-view.active');
+    if (activeView) {
+        activeView.classList.remove('active');
+    }
+    
+    // Setup Report UI
+    reportTitle.innerHTML = reportList.title;
+    
+    if (reportTableHeader) {
+        reportTableHeader.innerHTML = reportList.headers.map(h => `<th>${h}</th>`).join('');
+    }
+    
+    if (reportTableBody) {
+        reportTableBody.innerHTML = reportList.data.map(row => 
+            `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+        ).join('');
+    }
+    
+    if (reportView) {
+        reportView.classList.add('active');
+    }
+}
+
+// Attach listeners to sidebar tree nodes that have data-report
+document.querySelectorAll('.tree-content[data-report]').forEach(node => {
+    node.addEventListener('click', (e) => {
+        const reportId = node.getAttribute('data-report');
+        renderReport(reportId);
+    });
+});
