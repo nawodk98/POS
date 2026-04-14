@@ -41,6 +41,26 @@ if (!mockDB.invoices) mockDB.invoices = [];
 if (!mockDB.grns) mockDB.grns = [];
 if (!mockDB.salesReturns) mockDB.salesReturns = [];
 if (!mockDB.purchaseReturns) mockDB.purchaseReturns = [];
+// Migration: add payments tracking to existing records
+mockDB.invoices.forEach(inv => { if (!inv.payments) inv.payments = []; if (inv.totalPaid===undefined) inv.totalPaid = inv.status==='paid'?inv.grandTotal:0; });
+mockDB.grns.forEach(grn => { if (!grn.payments) grn.payments = []; if (grn.totalPaid===undefined) grn.totalPaid = grn.status==='paid'?grn.totalCost:0; });
+
+// === HELPER: compute effective balance after returns ===
+function calcBalance(tx, type) {
+    const isInv = type === 'invoice';
+    const originalTotal = isInv ? tx.grandTotal : tx.totalCost;
+    const returnedValue = tx.items.reduce((s, it) => s + (it.returnedQty || 0) * (isInv ? it.price : it.cost), 0);
+    const returnedTax = (isInv && tx.taxRegistered) ? returnedValue * 0.18 : 0;
+    const effectiveTotal = originalTotal - returnedValue - returnedTax;
+    const totalPaid = tx.totalPaid || 0;
+    return { originalTotal, returnedValue: returnedValue + returnedTax, effectiveTotal, totalPaid, balance: Math.max(0, effectiveTotal - totalPaid) };
+}
+function txStatus(tx, type) {
+    const b = calcBalance(tx, type);
+    if (b.balance <= 0) return 'paid';
+    if (b.totalPaid > 0) return 'partial';
+    return 'unpaid';
+}
 
 // === NAVIGATION HELPER ===
 function showContent(viewId) {
@@ -270,10 +290,11 @@ if (saveGrnBtn) {
             const qty=parseFloat(row.querySelector('.grn-qty')?.value)||0;
             const cost=parseFloat(row.querySelector('.grn-cost')?.value)||0;
             const lineTotal = qty * cost;
+            const sellPrice=parseFloat(row.querySelector('.grn-sell-price')?.value)||0;
             items.push({ partNo: pNo, name, qty, cost, total: lineTotal, returnedQty: 0 });
             totalCost += lineTotal;
             const item=mockDB.items.find(i=>i.partNo===pNo);
-            if(item){item.stock=(item.stock||0)+qty;item.isUsed=true;}
+            if(item){item.stock=(item.stock||0)+qty;item.isUsed=true; if(sellPrice>0) item.price=sellPrice; }
         });
 
         // Persist GRN record
@@ -286,6 +307,8 @@ if (saveGrnBtn) {
             paymentTerms: payTerms,
             items,
             totalCost,
+            payments: [],
+            totalPaid: payTerms === 'cash' ? totalCost : 0,
             status: payTerms === 'cash' ? 'paid' : 'unpaid'
         });
 
@@ -300,6 +323,7 @@ const grnPartSearch = document.getElementById('grn-part-search');
 const grnDropdown   = document.getElementById('grn-autocomplete-dropdown');
 const grnEntryQty   = document.getElementById('grn-entry-qty');
 const grnEntryCost  = document.getElementById('grn-entry-cost');
+const grnEntryPrice = document.getElementById('grn-entry-price');
 const grnAddBtn     = document.getElementById('grn-add-btn');
 const grnItemsTable = document.getElementById('grn-items');
 let grnSelectedPart = null;
@@ -308,7 +332,7 @@ if (grnPartSearch) {
     grnPartSearch.addEventListener('input', (e) => {
         const q=e.target.value.toLowerCase().trim();
         grnDropdown.innerHTML=''; grnSelectedPart=null;
-        grnEntryQty.disabled=true; grnEntryCost.disabled=true; grnAddBtn.disabled=true;
+        grnEntryQty.disabled=true; grnEntryCost.disabled=true; if(grnEntryPrice) grnEntryPrice.disabled=true; grnAddBtn.disabled=true;
         if(!q){grnDropdown.style.display='none';return;}
         const matches=mockDB.items.filter(p=>p.name.toLowerCase().includes(q)||p.partNo.toLowerCase().includes(q));
         if(matches.length>0){
@@ -325,25 +349,29 @@ if (grnPartSearch) {
     function selectGrnPart(part) {
         grnSelectedPart=part; grnPartSearch.value=part.name;
         grnEntryCost.value=(parseFloat(part.price)||0).toFixed(2); grnEntryQty.value=1;
+        if(grnEntryPrice) { grnEntryPrice.value=(parseFloat(part.price)||0).toFixed(2); grnEntryPrice.disabled=false; }
         grnEntryQty.disabled=false; grnEntryCost.disabled=false; grnAddBtn.disabled=false;
         grnDropdown.style.display='none'; grnEntryQty.focus();
     }
     function addGrnEntry() {
         if(!grnSelectedPart) return;
         const qty=parseFloat(grnEntryQty.value)||1, cost=parseFloat(grnEntryCost.value)||0;
+        const sellPrice = grnEntryPrice ? (parseFloat(grnEntryPrice.value)||0) : 0;
         const row=document.createElement('tr');
         row.innerHTML=`<td>${grnSelectedPart.partNo}</td><td>${grnSelectedPart.name}</td>
             <td><input type="number" class="item-qty glass-input num-input grn-qty" value="${qty}" min="1" style="width:100%;text-align:center;"></td>
             <td><input type="number" class="item-price glass-input num-input grn-cost" value="${cost.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+            <td><input type="number" class="glass-input num-input grn-sell-price" value="${sellPrice.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
             <td class="grn-total">${(qty*cost).toFixed(2)}</td>
             <td><button class="action-btn text-danger grn-remove-btn">×</button></td>`;
         grnItemsTable.appendChild(row);
         grnPartSearch.value=''; grnEntryQty.value=''; grnEntryCost.value='';
+        if(grnEntryPrice) { grnEntryPrice.value=''; grnEntryPrice.disabled=true; }
         grnEntryQty.disabled=true; grnEntryCost.disabled=true; grnAddBtn.disabled=true;
         grnSelectedPart=null; grnPartSearch.focus(); calculateGrnTotals();
     }
     grnAddBtn.addEventListener('click', addGrnEntry);
-    [grnPartSearch,grnEntryQty,grnEntryCost].forEach(inp=>{
+    [grnPartSearch,grnEntryQty,grnEntryCost,grnEntryPrice].filter(Boolean).forEach(inp=>{
         inp.addEventListener('keydown',(e)=>{
             if(e.key==='Enter'){e.preventDefault();
                 if(grnSelectedPart) addGrnEntry();
@@ -525,7 +553,7 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
             const grandTotal = subtotal + tax;
 
             // Persist invoice record
-            mockDB.invoices.push({
+            const invRecord = {
                 id: invId,
                 date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
                 customerId: custId,
@@ -536,8 +564,11 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
                 subtotal,
                 tax,
                 grandTotal,
+                payments: [],
+                totalPaid: payTerms === 'cash' ? grandTotal : 0,
                 status: payTerms === 'cash' ? 'paid' : 'unpaid'
-            });
+            };
+            mockDB.invoices.push(invRecord);
 
             // Update stock (deduct sold items)
             invItems.forEach(itm => {
@@ -733,10 +764,8 @@ if(filterBtn){
 }
 
 function renderReport(reportId) {
-    const rpt=mockReports[reportId]; if(!rpt) return;
     currentReportId=reportId;
     showContent('report-view');
-    reportTitle.innerHTML=rpt.title;
 
     const debtorSelector=document.getElementById('report-debtor-selector');
     const debtorCard=document.getElementById('report-debtor-card');
@@ -745,6 +774,101 @@ function renderReport(reportId) {
 
     if(debtorCard){debtorCard.style.display='none';debtorCard.innerHTML='';}
     if(debtorSelector) debtorSelector.style.display='none';
+
+    // === DYNAMIC REPORT TYPES (from real data) ===
+    if (reportId === 'pending_debtors') {
+        reportTitle.innerHTML = '📊 Pending Debit Summary (Customers Owe You)';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='none';
+        const unpaid = mockDB.invoices.filter(i => calcBalance(i,'invoice').balance > 0);
+        const grouped = {};
+        unpaid.forEach(inv => {
+            const b = calcBalance(inv,'invoice');
+            if (!grouped[inv.customerName]) grouped[inv.customerName] = { total:0, paid:0, balance:0, count:0 };
+            grouped[inv.customerName].total += b.effectiveTotal;
+            grouped[inv.customerName].paid += b.totalPaid;
+            grouped[inv.customerName].balance += b.balance;
+            grouped[inv.customerName].count++;
+        });
+        const rows = Object.entries(grouped).map(([name, d]) => [
+            `<strong>${name}</strong>`,
+            d.count,
+            d.total.toFixed(2),
+            `<span style="color:#10B981;">${d.paid.toFixed(2)}</span>`,
+            `<strong style="color:#EF4444;">${d.balance.toFixed(2)}</strong>`
+        ]);
+        const totalBal = Object.values(grouped).reduce((s,d)=>s+d.balance,0);
+        rows.push([`<strong>TOTAL</strong>`, '', '', '', `<strong style="color:#EF4444;font-size:1.1rem;">${totalBal.toFixed(2)}</strong>`]);
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Customer</th><th>Invoices</th><th>Effective Total</th><th>Paid</th><th>Balance Due</th>';
+        if(reportTableBody) reportTableBody.innerHTML = rows.length > 1
+            ? rows.map(row => `<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
+            : '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:30px;">No pending debits. All invoices are fully paid!</td></tr>';
+        return;
+    }
+
+    if (reportId === 'pending_creditors') {
+        reportTitle.innerHTML = '📊 Pending Credit Summary (You Owe Suppliers)';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='none';
+        const unpaid = mockDB.grns.filter(g => calcBalance(g,'grn').balance > 0);
+        const grouped = {};
+        unpaid.forEach(grn => {
+            const b = calcBalance(grn,'grn');
+            if (!grouped[grn.supplierName]) grouped[grn.supplierName] = { total:0, paid:0, balance:0, count:0 };
+            grouped[grn.supplierName].total += b.effectiveTotal;
+            grouped[grn.supplierName].paid += b.totalPaid;
+            grouped[grn.supplierName].balance += b.balance;
+            grouped[grn.supplierName].count++;
+        });
+        const rows = Object.entries(grouped).map(([name, d]) => [
+            `<strong>${name}</strong>`,
+            d.count,
+            d.total.toFixed(2),
+            `<span style="color:#10B981;">${d.paid.toFixed(2)}</span>`,
+            `<strong style="color:#EF4444;">${d.balance.toFixed(2)}</strong>`
+        ]);
+        const totalBal = Object.values(grouped).reduce((s,d)=>s+d.balance,0);
+        rows.push([`<strong>TOTAL</strong>`, '', '', '', `<strong style="color:#EF4444;font-size:1.1rem;">${totalBal.toFixed(2)}</strong>`]);
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Supplier</th><th>GRNs</th><th>Effective Total</th><th>Paid</th><th>Balance Due</th>';
+        if(reportTableBody) reportTableBody.innerHTML = rows.length > 1
+            ? rows.map(row => `<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')
+            : '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:30px;">No pending credits. All GRNs are fully paid!</td></tr>';
+        return;
+    }
+
+    if (reportId === 'payment_summary') {
+        reportTitle.innerHTML = '📊 Overall Payment Summary';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='none';
+
+        // Invoice totals
+        let invTotal=0, invPaid=0, invBal=0;
+        mockDB.invoices.forEach(inv => { const b=calcBalance(inv,'invoice'); invTotal+=b.effectiveTotal; invPaid+=b.totalPaid; invBal+=b.balance; });
+        // GRN totals
+        let grnTotal=0, grnPaid=0, grnBal=0;
+        mockDB.grns.forEach(grn => { const b=calcBalance(grn,'grn'); grnTotal+=b.effectiveTotal; grnPaid+=b.totalPaid; grnBal+=b.balance; });
+        // Returns
+        const salesRetTotal = mockDB.salesReturns.reduce((s,r)=>s+r.totalRefund,0);
+        const purchRetTotal = mockDB.purchaseReturns.reduce((s,r)=>s+r.totalRefund,0);
+
+        const rows = [
+            ['<strong style="color:var(--input-focus);">📋 Invoices (Sales)</strong>', mockDB.invoices.length, `<span style="color:#10B981;">${invTotal.toFixed(2)}</span>`, `<span style="color:#10B981;">${invPaid.toFixed(2)}</span>`, `<span style="color:#EF4444;">${invBal.toFixed(2)}</span>`],
+            ['<strong style="color:#10B981;">📦 GRNs (Purchases)</strong>', mockDB.grns.length, `<span style="color:#F59E0B;">${grnTotal.toFixed(2)}</span>`, `<span style="color:#10B981;">${grnPaid.toFixed(2)}</span>`, `<span style="color:#EF4444;">${grnBal.toFixed(2)}</span>`],
+            ['<strong style="color:#EF4444;">↩ Sales Returns</strong>', mockDB.salesReturns.length, `<span style="color:#EF4444;">-${salesRetTotal.toFixed(2)}</span>`, '-', '-'],
+            ['<strong style="color:#EF4444;">↩ Purchase Returns</strong>', mockDB.purchaseReturns.length, `<span style="color:#EF4444;">-${purchRetTotal.toFixed(2)}</span>`, '-', '-'],
+            ['', '', '', '', ''],
+            ['<strong>Total Receivable (Customers Owe)</strong>', '', '', '', `<strong style="color:#EF4444;font-size:1.1rem;">${invBal.toFixed(2)}</strong>`],
+            ['<strong>Total Payable (You Owe)</strong>', '', '', '', `<strong style="color:#EF4444;font-size:1.1rem;">${grnBal.toFixed(2)}</strong>`],
+        ];
+
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Category</th><th>Count</th><th>Total Value</th><th>Paid</th><th>Pending</th>';
+        if(reportTableBody) reportTableBody.innerHTML = rows.map(row => `<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
+        return;
+    }
+
+    // === ORIGINAL STATIC REPORTS ===
+    const rpt=mockReports[reportId]; if(!rpt) return;
+    reportTitle.innerHTML=rpt.title;
 
     const needsSelector=['ap_summary','ar_customer','ar_summary'].includes(reportId);
     const isAP = reportId==='ap_summary';
@@ -800,33 +924,36 @@ function renderHistory(type) {
     const bodyEl = document.getElementById('history-table-body');
     if (!titleEl || !headerEl || !bodyEl) return;
 
+    const statusLabel = (s) => s==='paid'?'\u2705 Paid':s==='partial'?'\uD83D\uDFE1 Partial':'\u23F3 Unpaid';
     switch(type) {
         case 'invoices':
             titleEl.innerText = '\uD83D\uDCCB Invoice History';
-            headerEl.innerHTML = '<th>Invoice No</th><th>Date</th><th>Customer</th><th>Total</th><th>Payment</th><th>Status</th><th width="120">Actions</th>';
+            headerEl.innerHTML = '<th>Invoice No</th><th>Date</th><th>Customer</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th width="100">Actions</th>';
             bodyEl.innerHTML = mockDB.invoices.length > 0
-                ? mockDB.invoices.slice().reverse().map(inv => `<tr>
+                ? mockDB.invoices.slice().reverse().map(inv => { const b=calcBalance(inv,'invoice'); const st=txStatus(inv,'invoice'); return `<tr>
                     <td style="font-weight:600;color:var(--input-focus);">${inv.id}</td><td>${inv.date}</td><td>${inv.customerName}</td>
-                    <td style="font-weight:600;">${inv.grandTotal.toFixed(2)}</td>
-                    <td><span class="status-badge ${inv.paymentTerms}">${inv.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</span></td>
-                    <td><span class="status-badge ${inv.status}">${inv.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span></td>
+                    <td style="font-weight:600;">${b.effectiveTotal.toFixed(2)}</td>
+                    <td style="color:#10B981;">${b.totalPaid.toFixed(2)}</td>
+                    <td style="color:${b.balance>0?'#EF4444':'#10B981'};font-weight:600;">${b.balance.toFixed(2)}</td>
+                    <td><span class="status-badge ${st}">${statusLabel(st)}</span></td>
                     <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('invoice','${inv.id}')">View</button></td>
-                </tr>`).join('')
-                : '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">No invoices found. Create one from Point of Sale.</td></tr>';
+                </tr>`; }).join('')
+                : '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:30px;">No invoices found.</td></tr>';
             break;
 
         case 'grns':
             titleEl.innerText = '\uD83D\uDCE6 GRN History';
-            headerEl.innerHTML = '<th>GRN No</th><th>Date</th><th>Supplier</th><th>Ref</th><th>Total</th><th>Payment</th><th>Status</th><th width="100">Actions</th>';
+            headerEl.innerHTML = '<th>GRN No</th><th>Date</th><th>Supplier</th><th>Ref</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th width="80">Actions</th>';
             bodyEl.innerHTML = mockDB.grns.length > 0
-                ? mockDB.grns.slice().reverse().map(grn => `<tr>
+                ? mockDB.grns.slice().reverse().map(grn => { const b=calcBalance(grn,'grn'); const st=txStatus(grn,'grn'); return `<tr>
                     <td style="font-weight:600;color:#10B981;">${grn.id}</td><td>${grn.date}</td><td>${grn.supplierName}</td><td>${grn.refNo||'-'}</td>
-                    <td style="font-weight:600;">${grn.totalCost.toFixed(2)}</td>
-                    <td><span class="status-badge ${grn.paymentTerms}">${grn.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</span></td>
-                    <td><span class="status-badge ${grn.status}">${grn.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span></td>
+                    <td style="font-weight:600;">${b.effectiveTotal.toFixed(2)}</td>
+                    <td style="color:#10B981;">${b.totalPaid.toFixed(2)}</td>
+                    <td style="color:${b.balance>0?'#EF4444':'#10B981'};font-weight:600;">${b.balance.toFixed(2)}</td>
+                    <td><span class="status-badge ${st}">${statusLabel(st)}</span></td>
                     <td><button class="action-btn" style="color:var(--input-focus);opacity:1;font-weight:600;" onclick="openTxModal('grn','${grn.id}')">View</button></td>
-                </tr>`).join('')
-                : '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);padding:30px;">No GRNs found. Receive stock from Stock In/Out.</td></tr>';
+                </tr>`; }).join('')
+                : '<tr><td colspan="9" style="text-align:center;color:var(--text-secondary);padding:30px;">No GRNs found.</td></tr>';
             break;
 
         case 'salesReturns':
@@ -870,7 +997,20 @@ function openTxModal(type, id) {
     if (type === 'invoice') {
         const inv = mockDB.invoices.find(i => i.id === id);
         if (!inv) return;
+        const b = calcBalance(inv, 'invoice');
+        const st = txStatus(inv, 'invoice');
+        const statusLbl = st==='paid'?'\u2705 Paid':st==='partial'?'\uD83D\uDFE1 Partial':'\u23F3 Unpaid';
         titleEl.innerText = `Invoice: ${inv.id}`;
+        let payHistoryHtml = '';
+        if (inv.payments && inv.payments.length > 0) {
+            payHistoryHtml = `<div style="margin-top:15px;padding:15px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;">
+                <p style="font-weight:600;margin-bottom:10px;color:var(--text-primary);">\uD83D\uDCB3 Payment History</p>
+                <table class="invoice-table"><thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Details</th></tr></thead><tbody>
+                ${inv.payments.map(p => `<tr><td>${p.date}</td><td>${p.method==='cheque'?'\uD83C\uDFE6 Cheque':'\uD83D\uDCB5 Cash'}</td>
+                    <td style="color:#10B981;font-weight:600;">${p.amount.toFixed(2)}</td>
+                    <td style="font-size:0.85rem;color:var(--text-secondary);">${p.method==='cheque'?'Bank: '+p.bank+' | Chq#: '+p.chequeNo+' | Chq Date: '+p.chequeDate+' | Banking: '+p.bankingDate:'-'}</td></tr>`).join('')}
+                </tbody></table></div>`;
+        }
         contentEl.innerHTML = `
             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:20px;">
                 <div>
@@ -879,9 +1019,11 @@ function openTxModal(type, id) {
                     <p style="color:var(--text-secondary);">Payment: <strong>${inv.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</strong></p>
                 </div>
                 <div style="text-align:right;">
-                    <p style="color:var(--text-secondary);font-size:0.85rem;">GRAND TOTAL</p>
-                    <p style="font-size:1.8rem;font-weight:700;color:#10B981;">${inv.grandTotal.toFixed(2)}</p>
-                    <span class="status-badge ${inv.status}" style="font-size:0.9rem;">${inv.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;">EFFECTIVE TOTAL</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:#10B981;">${b.effectiveTotal.toFixed(2)}</p>
+                    ${b.returnedValue>0?'<p style="font-size:0.8rem;color:#EF4444;">Returns: -'+b.returnedValue.toFixed(2)+' (Orig: '+b.originalTotal.toFixed(2)+')</p>':''}
+                    <p style="margin-top:4px;"><span class="status-badge ${st}" style="font-size:0.9rem;">${statusLbl}</span></p>
+                    ${b.balance>0?'<p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">Paid: '+b.totalPaid.toFixed(2)+' | <strong style="color:#EF4444;">Balance: '+b.balance.toFixed(2)+'</strong></p>':''}
                 </div>
             </div>
             <table class="invoice-table"><thead><tr>
@@ -894,20 +1036,34 @@ function openTxModal(type, id) {
                 </tr>`).join('')}
             </tbody></table>
             ${inv.tax > 0 ? `<p style="text-align:right;margin-top:10px;color:var(--text-secondary);">Subtotal: ${inv.subtotal.toFixed(2)} | Tax (18%): ${inv.tax.toFixed(2)}</p>` : ''}
+            ${payHistoryHtml}
         `;
         const hasReturnable = inv.items.some(it => (it.returnedQty || 0) < it.qty);
         if (hasReturnable) {
             actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;color:#EF4444;border-color:rgba(239,68,68,0.3);" onclick="showReturnForm('invoice','${inv.id}')">\u21A9 Create Return</button>`;
         }
-        if (inv.status === 'unpaid') {
-            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="markAsPaid('invoice','${inv.id}');">\u2705 Mark as Paid</button>`;
+        if (b.balance > 0) {
+            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="showPaymentForm('invoice','${inv.id}');">\uD83D\uDCB3 Record Payment</button>`;
         }
         actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
 
     } else if (type === 'grn') {
         const grn = mockDB.grns.find(g => g.id === id);
         if (!grn) return;
+        const b = calcBalance(grn, 'grn');
+        const st = txStatus(grn, 'grn');
+        const statusLbl = st==='paid'?'\u2705 Paid':st==='partial'?'\uD83D\uDFE1 Partial':'\u23F3 Unpaid';
         titleEl.innerText = `GRN: ${grn.id}`;
+        let payHistoryHtml = '';
+        if (grn.payments && grn.payments.length > 0) {
+            payHistoryHtml = `<div style="margin-top:15px;padding:15px;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;">
+                <p style="font-weight:600;margin-bottom:10px;color:var(--text-primary);">\uD83D\uDCB3 Payment History</p>
+                <table class="invoice-table"><thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Details</th></tr></thead><tbody>
+                ${grn.payments.map(p => `<tr><td>${p.date}</td><td>${p.method==='cheque'?'\uD83C\uDFE6 Cheque':'\uD83D\uDCB5 Cash'}</td>
+                    <td style="color:#10B981;font-weight:600;">${p.amount.toFixed(2)}</td>
+                    <td style="font-size:0.85rem;color:var(--text-secondary);">${p.method==='cheque'?'Bank: '+p.bank+' | Chq#: '+p.chequeNo+' | Chq Date: '+p.chequeDate+' | Banking: '+p.bankingDate:'-'}</td></tr>`).join('')}
+                </tbody></table></div>`;
+        }
         contentEl.innerHTML = `
             <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;margin-bottom:20px;">
                 <div>
@@ -916,9 +1072,11 @@ function openTxModal(type, id) {
                     <p style="color:var(--text-secondary);">Payment: <strong>${grn.paymentTerms === 'cash' ? '\uD83D\uDCB5 Cash' : '\uD83D\uDCC5 Credit'}</strong></p>
                 </div>
                 <div style="text-align:right;">
-                    <p style="color:var(--text-secondary);font-size:0.85rem;">TOTAL COST</p>
-                    <p style="font-size:1.8rem;font-weight:700;color:#F59E0B;">${grn.totalCost.toFixed(2)}</p>
-                    <span class="status-badge ${grn.status}" style="font-size:0.9rem;">${grn.status === 'paid' ? '\u2705 Paid' : '\u23F3 Unpaid'}</span>
+                    <p style="color:var(--text-secondary);font-size:0.85rem;">EFFECTIVE TOTAL</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:#F59E0B;">${b.effectiveTotal.toFixed(2)}</p>
+                    ${b.returnedValue>0?'<p style="font-size:0.8rem;color:#EF4444;">Returns: -'+b.returnedValue.toFixed(2)+' (Orig: '+b.originalTotal.toFixed(2)+')</p>':''}
+                    <p style="margin-top:4px;"><span class="status-badge ${st}" style="font-size:0.9rem;">${statusLbl}</span></p>
+                    ${b.balance>0?'<p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">Paid: '+b.totalPaid.toFixed(2)+' | <strong style="color:#EF4444;">Balance: '+b.balance.toFixed(2)+'</strong></p>':''}
                 </div>
             </div>
             <table class="invoice-table"><thead><tr>
@@ -930,13 +1088,14 @@ function openTxModal(type, id) {
                     <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};font-weight:600;">${it.returnedQty || 0}</td>
                 </tr>`).join('')}
             </tbody></table>
+            ${payHistoryHtml}
         `;
         const hasReturnable = grn.items.some(it => (it.returnedQty || 0) < it.qty);
         if (hasReturnable) {
             actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;color:#EF4444;border-color:rgba(239,68,68,0.3);" onclick="showReturnForm('grn','${grn.id}')">\u21A9 Create Return</button>`;
         }
-        if (grn.status === 'unpaid') {
-            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="markAsPaid('grn','${grn.id}');">\u2705 Mark as Paid</button>`;
+        if (b.balance > 0) {
+            actionsEl.innerHTML += `<button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="showPaymentForm('grn','${grn.id}');">\uD83D\uDCB3 Record Payment</button>`;
         }
         actionsEl.innerHTML += `<button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="closeTxModal()">Close</button>`;
 
@@ -1142,27 +1301,86 @@ function processReturn(type, id) {
     }
 }
 
-// === MARK AS PAID ===
-function markAsPaid(type, id) {
-    if (type === 'invoice') {
-        const inv = mockDB.invoices.find(i => i.id === id);
-        if (!inv) return;
-        if (confirm(`Mark Invoice ${inv.id} as PAID?`)) {
-            inv.status = 'paid';
-            saveDB();
-            alert(`\u2705 Invoice ${inv.id} marked as Paid.`);
-            openTxModal('invoice', id);
-        }
-    } else if (type === 'grn') {
-        const grn = mockDB.grns.find(g => g.id === id);
-        if (!grn) return;
-        if (confirm(`Mark GRN ${grn.id} as PAID?`)) {
-            grn.status = 'paid';
-            saveDB();
-            alert(`\u2705 GRN ${grn.id} marked as Paid.`);
-            openTxModal('grn', id);
-        }
+// === PAYMENT FORM (Cash/Cheque, partial payment) ===
+function showPaymentForm(type, id) {
+    const contentEl = document.getElementById('tx-modal-content');
+    const actionsEl = document.getElementById('tx-modal-actions');
+    const titleEl = document.getElementById('tx-modal-title');
+    if (!contentEl || !actionsEl || !titleEl) return;
+
+    const tx = type==='invoice' ? mockDB.invoices.find(i=>i.id===id) : mockDB.grns.find(g=>g.id===id);
+    if (!tx) return;
+    const b = calcBalance(tx, type);
+    const today = new Date().toISOString().slice(0,10);
+
+    titleEl.innerText = `\uD83D\uDCB3 Record Payment — ${tx.id}`;
+    contentEl.innerHTML = `
+        <div style="background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:20px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:15px;">
+                <div><p style="color:var(--text-secondary);">Effective Total: <strong>${b.effectiveTotal.toFixed(2)}</strong></p>
+                    <p style="color:var(--text-secondary);">Already Paid: <strong style="color:#10B981;">${b.totalPaid.toFixed(2)}</strong></p></div>
+                <div style="text-align:right;"><p style="color:var(--text-secondary);font-size:0.85rem;">BALANCE DUE</p>
+                    <p style="font-size:1.8rem;font-weight:700;color:#EF4444;">${b.balance.toFixed(2)}</p></div>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div class="input-group"><label>Payment Method</label>
+                <select id="pay-method" class="glass-input custom-select" style="height:48px;" onchange="document.getElementById('cheque-fields').style.display=this.value==='cheque'?'grid':'none'">
+                    <option value="cash">\uD83D\uDCB5 Cash</option><option value="cheque">\uD83C\uDFE6 Cheque</option></select></div>
+            <div class="input-group"><label>Amount Paying</label>
+                <input type="number" id="pay-amount" class="glass-input" value="${b.balance.toFixed(2)}" step="0.01" min="0.01" max="${b.balance.toFixed(2)}" style="height:48px;"></div>
+        </div>
+        <div id="cheque-fields" style="display:none;grid-template-columns:1fr 1fr;gap:15px;margin-top:15px;">
+            <div class="input-group"><label>Bank Name</label><input type="text" id="pay-bank" class="glass-input" placeholder="e.g. BOC, HNB" style="height:48px;"></div>
+            <div class="input-group"><label>Cheque Number</label><input type="text" id="pay-cheque-no" class="glass-input" placeholder="e.g. 123456" style="height:48px;"></div>
+            <div class="input-group"><label>Cheque Date</label><input type="date" id="pay-cheque-date" class="glass-input" value="${today}" style="height:48px;"></div>
+            <div class="input-group"><label>Banking Date</label><input type="date" id="pay-banking-date" class="glass-input" value="${today}" style="height:48px;"></div>
+        </div>
+    `;
+    actionsEl.innerHTML = `
+        <button class="glass-btn-soft cancel-btn" style="padding:10px 20px;" onclick="openTxModal('${type}','${id}');">\u2190 Back</button>
+        <button class="login-btn" style="padding:10px 20px;margin-top:0;width:auto;background:linear-gradient(135deg,#10B981,#059669);box-shadow:0 10px 20px rgba(16,185,129,0.3);" onclick="processPayment('${type}','${id}');">\u2705 Confirm Payment</button>
+    `;
+}
+
+function processPayment(type, id) {
+    const tx = type==='invoice' ? mockDB.invoices.find(i=>i.id===id) : mockDB.grns.find(g=>g.id===id);
+    if (!tx) return;
+    const b = calcBalance(tx, type);
+    const method = document.getElementById('pay-method')?.value || 'cash';
+    const amount = parseFloat(document.getElementById('pay-amount')?.value) || 0;
+
+    if (amount <= 0) { alert('Please enter a valid payment amount.'); return; }
+    if (amount > b.balance + 0.01) { alert(`Amount exceeds balance of ${b.balance.toFixed(2)}`); return; }
+
+    const payment = {
+        date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+        method,
+        amount
+    };
+    if (method === 'cheque') {
+        const bank = document.getElementById('pay-bank')?.value?.trim();
+        const chequeNo = document.getElementById('pay-cheque-no')?.value?.trim();
+        const chequeDate = document.getElementById('pay-cheque-date')?.value || '';
+        const bankingDate = document.getElementById('pay-banking-date')?.value || '';
+        if (!bank || !chequeNo) { alert('Please fill in Bank and Cheque Number.'); return; }
+        payment.bank = bank;
+        payment.chequeNo = chequeNo;
+        payment.chequeDate = chequeDate;
+        payment.bankingDate = bankingDate;
     }
+
+    if (!tx.payments) tx.payments = [];
+    tx.payments.push(payment);
+    tx.totalPaid = (tx.totalPaid || 0) + amount;
+
+    // Update status
+    const newBalance = calcBalance(tx, type).balance;
+    tx.status = newBalance <= 0 ? 'paid' : 'partial';
+
+    saveDB();
+    alert(`\u2705 Payment of ${amount.toFixed(2)} recorded!${newBalance<=0?' — Fully Paid!':' — Remaining: '+newBalance.toFixed(2)}`);
+    openTxModal(type, id);
 }
 
 function closeTxModal() {

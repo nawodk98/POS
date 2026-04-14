@@ -271,6 +271,24 @@
                                     <span class="tree-title">Profit & Loss</span>
                                 </div>
                             </div>
+                            <div class="tree-node">
+                                <div class="tree-content" data-report="pending_debtors">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Pending Debit Summary</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content" data-report="pending_creditors">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Pending Credit Summary</span>
+                                </div>
+                            </div>
+                            <div class="tree-node">
+                                <div class="tree-content" data-report="payment_summary">
+                                    <span class="branch-icon nested">↳</span>
+                                    <span class="tree-title">Overall Payment Summary</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -529,7 +547,9 @@
                     <input type="number" id="grn-entry-qty" placeholder="Qty" step="1" class="glass-input num-input"
                         style="flex: 0.5;" disabled>
                     <input type="number" id="grn-entry-cost" placeholder="Unit Cost" step="0.01" class="glass-input num-input"
-                        style="flex: 1;" disabled>
+                        style="flex: 0.8;" disabled>
+                    <input type="number" id="grn-entry-price" placeholder="Sell Price" step="0.01" class="glass-input num-input"
+                        style="flex: 0.8;" disabled>
                     <button id="grn-add-btn" class="add-item-btn glass-btn-soft" style="align-self: center;" disabled>Add (Enter)</button>
                 </div>
 
@@ -539,10 +559,11 @@
                         <tr>
                             <th>Part No</th>
                             <th>Item Name</th>
-                            <th width="80">Qty</th>
-                            <th width="130">Unit Cost</th>
-                            <th width="130">Total Cost</th>
-                            <th width="50"></th>
+                            <th width="70">Qty</th>
+                            <th width="110">Unit Cost</th>
+                            <th width="110">Sell Price</th>
+                            <th width="110">Total Cost</th>
+                            <th width="40"></th>
                         </tr>
                     </thead>
                     <tbody id="grn-items">
@@ -708,7 +729,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=5"></script>
+    <script src="script.js?v=6"></script>
 </body>
 
 </html>
