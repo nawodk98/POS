@@ -664,6 +664,91 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
             });
 
             saveDB();
+            
+            // Build Sri Lankan Tax Invoice compliant layout
+            const po = document.getElementById('print-overlay');
+            if (po) {
+                const d=new Date(); const yy=d.getFullYear().toString().slice(-2); const mmm=d.toLocaleString('en-US',{month:'short'}).toUpperCase();
+                const serial = `${yy}${mmm}_MMSL_${invId.split('-').pop()}`;
+                
+                let html = `
+                <div class="print-header">
+                    <div>
+                        <h1 class="print-title">MAHESH MOTOR SPARES (Pvt) Ltd.</h1>
+                        <p class="print-subtitle">Importers And Dealers In Japanese Motor Spare Parts</p>
+                        <p class="print-address">No. 167, Panchikawatta Road, Colombo - 10</p>
+                        <p class="print-address">Tel: 0112436895 / 0112331895  WhatsApp: 0777 039302</p>
+                        <p class="print-address">E-mail: maheshmotors676@gmail.com</p>
+                        ${isTax ? `<p class="print-address" style="margin-top: 5px;"><strong>Supplier TIN: 123456789-7000</strong></p>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <p style="font-size: 16px; font-weight: bold; color: #0055AA;">${payTerms.toUpperCase()}</p>
+                    </div>
+                </div>
+                ${isTax ? `<div class="print-tax-label">TAX INVOICE</div>` : `<div class="print-tax-label" style="text-decoration:none;">INVOICE</div>`}
+                <div class="print-boxes-row">
+                    <div class="print-box">
+                        <p><strong>Customer:</strong> ${custName}</p>
+                        <p><strong>Address:</strong> ${custId ? (mockDB.debtors.find(c=>c.id===custId)?.address || 'N/A') : 'N/A'}</p>
+                        ${isTax ? `<p><strong>TIN:</strong> ${custId ? (mockDB.debtors.find(c=>c.id===custId)?.taxRegistered ? '111222333-7000' : 'N/A') : 'N/A'}</p>` : ''}
+                    </div>
+                    <div class="print-box">
+                        <p><strong>Invoice No.:</strong> ${invId}</p>
+                        <p><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</p>
+                        ${isTax ? `<p><strong>Serial No.:</strong> ${serial}</p>` : ''}
+                    </div>
+                </div>
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th>PART NUMBER</th>
+                            <th style="text-align:center;">QTY.</th>
+                            <th>DESCRIPTION</th>
+                            <th>RATE</th>
+                            <th>DIS.%</th>
+                            <th>NET PRICE</th>
+                            <th>TOTAL Rs.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${invItems.map(item => {
+                            const rawRate = item.price;
+                            const discAmt = item.discount;
+                            const discPerc = discAmt > 0 ? ((discAmt / (item.qty * item.price)) * 100).toFixed(1) + '%' : '-';
+                            const netPrice = ((item.qty * item.price - discAmt) / item.qty).toFixed(2);
+                            return `<tr>
+                                <td>${item.partNo}</td>
+                                <td style="text-align:center;">${item.qty}</td>
+                                <td>${item.name}</td>
+                                <td>${rawRate.toFixed(2)}</td>
+                                <td>${discPerc}</td>
+                                <td>${netPrice}</td>
+                                <td>${item.total.toFixed(2)}</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <div class="print-summary">
+                    <table class="print-summary-table">
+                        <tr><td>Base Value:</td><td>${(subtotal + billDisc).toFixed(2)}</td></tr>
+                        ${billDisc > 0 ? `<tr><td>Bill Disc (-):</td><td>${billDisc.toFixed(2)}</td></tr>` : ''}
+                        <tr><td style="padding-top:10px;">Sub Total:</td><td style="padding-top:10px;">${subtotal.toFixed(2)}</td></tr>
+                        ${isTax ? `<tr><td>VAT (18%):</td><td>${tax.toFixed(2)}</td></tr>` : ''}
+                        <tr><td style="border-top:2px solid #000; padding:10px;">TOTAL AMOUNT (Rs.):</td><td style="border-top:2px solid #000; padding:10px; font-size:16px;">${grandTotal.toFixed(2)}</td></tr>
+                    </table>
+                </div>
+                <div class="print-footer">
+                    <p style="font-weight: bold; margin-bottom: 20px;">Cheques should be drawn in favour of "Mahesh Motor Spares (Pvt) Ltd"</p>
+                    <div class="print-signatures">
+                        <div class="print-signature-line">ISSUED BY</div>
+                        <div class="print-signature-line">RECEIVED BY</div>
+                        <div class="print-signature-line" style="border:none;">Order No: _______________</div>
+                        <div class="print-signature-line" style="border:none;">Vehicle No: _______________</div>
+                    </div>
+                </div>`;
+                po.innerHTML = html;
+            }
+
             window.print();
             const newId=parseInt(localStorage.getItem('lastInvoiceId')||'1')+1;
             localStorage.setItem('lastInvoiceId',newId); initInvoiceNumber();
