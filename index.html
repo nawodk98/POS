@@ -302,9 +302,28 @@
 
         <main class="main-content">
             <!-- Dashboard View -->
-            <div id="dashboard-view" class="content-view action-panel glass-panel active">
+            <div id="dashboard-view" class="content-view active" style="flex-direction: column; gap: 25px; padding: 0; background: transparent; border: none; box-shadow: none;">
+                
+                <div class="glass-panel" style="padding: 24px 30px; border-radius: 24px; display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap;">
+                    <div class="input-group" style="flex: 2; margin: 0; min-width: 250px;">
+                        <label style="font-weight: 600; color: var(--text-primary); margin-bottom: 10px; font-size: 1rem;"><span style="color:var(--input-focus); margin-right:6px;">⚡</span> Quick Stock Check</label>
+                        <div class="autocomplete-wrapper" style="width: 100%;">
+                            <input type="text" id="dash-part-search" placeholder="Type Part No. or Name..." class="glass-input" autocomplete="off" style="width: 100%; height: 56px; font-size: 1.1rem; border-radius: 14px;">
+                            <div id="dash-part-dropdown" class="dropdown-content"></div>
+                        </div>
+                    </div>
+                    <div class="input-group" style="flex: 1; margin: 0; min-width: 150px;">
+                        <label style="margin-bottom: 10px; font-size: 0.95rem;">Availability</label>
+                        <input type="text" id="dash-stock-qty" class="glass-input" style="height: 56px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10B981; font-weight: 800; font-size: 1.4rem; text-align: center; border-radius: 14px;" disabled value="-">
+                    </div>
+                    <div class="input-group" style="flex: 1; margin: 0; min-width: 150px;">
+                        <label style="margin-bottom: 10px; font-size: 0.95rem;">Price</label>
+                        <input type="text" id="dash-stock-price" class="glass-input" style="height: 56px; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.2); color: #38BDF8; font-weight: 800; font-size: 1.4rem; text-align: center; border-radius: 14px;" disabled value="-">
+                    </div>
+                </div>
 
-
+                <div class="action-panel glass-panel" style="width: 100%; gap: 20px; padding: 30px; display: flex; flex-wrap: wrap; justify-content: flex-start;">
+                    <!-- Quick Actions -->
                 <!-- Quick Action 3: New Invoice -->
                 <div class="feature-item group" id="new-invoice-btn">
                     <button class="feature-btn glass-btn-round">
@@ -360,6 +379,7 @@
                     </button>
                     <span class="feature-label">Settings</span>
                 </div>
+            </div>
             </div>
 
             <!-- Invoice View -->

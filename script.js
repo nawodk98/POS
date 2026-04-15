@@ -1061,14 +1061,14 @@ function renderReport(reportId) {
         return;
     }
 
-    if(needsSelector){
+    // For static tables like periodic_sales, inventory_summary, ap_summary, ar_summary
         if(debtorSelector) debtorSelector.style.display='none';
         if(mainTable) mainTable.style.display='';
         if(dateFilters) dateFilters.style.display='flex';
         if(reportTableHeader) reportTableHeader.innerHTML=rpt.headers.map(h=>`<th>${h}</th>`).join('');
         if(reportTableBody)   reportTableBody.innerHTML=rpt.data.map(row=>`<tr>${row.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('');
     }
-}
+
 
 // Sidebar report node listeners
 document.querySelectorAll('.tree-content[data-report]').forEach(node=>{
@@ -1536,6 +1536,31 @@ function processPayment(type, id) {
         payment.chequeDate = chequeDate;
         payment.bankingDate = bankingDate;
     }
+
+    if (!tx.payments) tx.payments = [];
+    tx.payments.push(payment);
+    tx.totalPaid = (tx.totalPaid || 0) + amount;
+
+    // Update status
+    const newBalance = calcBalance(tx, type).balance;
+    tx.status = newBalance <= 0 ? 'paid' : 'partial';
+
+    saveDB();
+    alert(`\u2705 Payment of ${amount.toFixed(2)} recorded!${newBalance<=0?' — Fully Paid!':' — Remaining: '+newBalance.toFixed(2)}`);
+    openTxModal(type, id);
+}
+
+function closeTxModal() {
+    const modal = document.getElementById('tx-modal-wrapper');
+    if (modal) modal.style.display = 'none';
+    // Refresh the history table behind the modal so status changes are visible
+    if (currentHistoryType) renderHistory(currentHistoryType);
+}
+
+// Close tx modal on X click
+const txModalCloseBtn = document.getElementById('tx-modal-close');
+if (txModalCloseBtn) txModalCloseBtn.addEventListener('click', closeTxModal);
+
 // === ITEM LEDGER LOGIC ===
 let currentLedgerItem = null;
 function renderLedgerTable(partNo) {
@@ -1568,7 +1593,8 @@ function renderLedgerTable(partNo) {
 
     if (filtered.length === 0) {
         const dbItem = mockDB.items.find(i=>i.partNo===partNo);
-        document.getElementById('ledger-stock-display')?.setAttribute('value', dbItem ? dbItem.stock||0 : 0);
+        const stockDisplay = document.getElementById('ledger-stock-display');
+        if(stockDisplay) stockDisplay.value = dbItem ? (dbItem.stock||0) : 0;
         body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">No movement found for this item in date range.</td></tr>';
         return;
     }
@@ -1583,7 +1609,10 @@ function renderLedgerTable(partNo) {
         <td>${m.val.toFixed(2)}</td>
     </tr>`}).join('');
     
-    // Set Dashboard stock visibility if elements existed (Optional implementation detail)
+    // Update Stock Display
+    const stockDisplay = document.getElementById('ledger-stock-display');
+    const dbItem = mockDB.items.find(i=>i.partNo===partNo);
+    if(stockDisplay) stockDisplay.value = dbItem ? (dbItem.stock||0) : 0;
 }
 
 const ledgerSearch = document.getElementById('report-item-search');
@@ -1611,29 +1640,38 @@ if (ledgerSearch) {
     });
     document.addEventListener('click', (e) => { if(e.target!==ledgerSearch) if(ledgerDropdown) ledgerDropdown.style.display='none'; });
 }
-    if (!tx.payments) tx.payments = [];
-    tx.payments.push(payment);
-    tx.totalPaid = (tx.totalPaid || 0) + amount;
-
-    // Update status
-    const newBalance = calcBalance(tx, type).balance;
-    tx.status = newBalance <= 0 ? 'paid' : 'partial';
-
-    saveDB();
-    alert(`\u2705 Payment of ${amount.toFixed(2)} recorded!${newBalance<=0?' — Fully Paid!':' — Remaining: '+newBalance.toFixed(2)}`);
-    openTxModal(type, id);
-}
-
-function closeTxModal() {
-    const modal = document.getElementById('tx-modal-wrapper');
-    if (modal) modal.style.display = 'none';
-    // Refresh the history table behind the modal so status changes are visible
-    if (currentHistoryType) renderHistory(currentHistoryType);
-}
-
-// Close tx modal on X click
-const txModalCloseBtn = document.getElementById('tx-modal-close');
-if (txModalCloseBtn) txModalCloseBtn.addEventListener('click', closeTxModal);
 
 // Initialize invoice AFTER all global const declarations (avoids TDZ ReferenceError)
 initInvoiceNumber();
+
+// === DASHBOARD STOCK CHECK LOGIC ===
+const dashPartSearch = document.getElementById('dash-part-search');
+const dashPartDropdown = document.getElementById('dash-part-dropdown');
+const dashStockQty = document.getElementById('dash-stock-qty');
+const dashStockPrice = document.getElementById('dash-stock-price');
+
+if (dashPartSearch) {
+    dashPartSearch.addEventListener('input', (e) => {
+        const q=e.target.value.toLowerCase().trim();
+        dashPartDropdown.innerHTML='';
+        if(dashStockQty) dashStockQty.value = '-';
+        if(dashStockPrice) dashStockPrice.value = '-';
+        if(!q){ dashPartDropdown.style.display='none'; return; }
+        const matches = mockDB.items.filter(p=>p.name.toLowerCase().includes(q) || p.partNo.toLowerCase().includes(q));
+        if (matches.length > 0) {
+            dashPartDropdown.style.display='block';
+            matches.forEach(part => {
+                const d=document.createElement('div'); d.className='dropdown-item';
+                d.innerHTML=`<span class="dropdown-item-title">${part.name}</span><span class="dropdown-item-desc">${part.partNo}</span>`;
+                d.addEventListener('click',() => {
+                    dashPartSearch.value=`${part.partNo} - ${part.name}`;
+                    if(dashStockQty) dashStockQty.value = part.stock || 0;
+                    if(dashStockPrice) dashStockPrice.value = part.price ? part.price.toFixed(2) : '0.00';
+                    dashPartDropdown.style.display='none';
+                });
+                dashPartDropdown.appendChild(d);
+            });
+        } else { dashPartDropdown.style.display='none'; }
+    });
+    document.addEventListener('click', (e) => { if(e.target!==dashPartSearch) if(dashPartDropdown) dashPartDropdown.style.display='none'; });
+}
