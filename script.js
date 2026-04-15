@@ -261,8 +261,10 @@ function initInvoiceNumber() {
     // Reset customer selector
     const cSel = document.getElementById('invoice-customer');
     const tCb  = document.getElementById('tax-registered-checkbox');
+    const bd   = document.getElementById('invoice-bill-discount');
     if (cSel) cSel.value = '';
     if (tCb) tCb.checked = false;
+    if (bd) bd.value = '0.00';
     // Recalculate using safe direct element lookup
     safeCalculateTotals();
 }
@@ -289,21 +291,26 @@ function initGrn() {
     populateGrnSuppliers();
     const grnItems = document.getElementById('grn-items');
     if (grnItems) grnItems.innerHTML = '';
+    const bd = document.getElementById('grn-bill-discount'); if(bd) bd.value = '0.00';
     calculateGrnTotals();
     ['grn-part-search','grn-ref'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-    ['grn-entry-qty','grn-entry-cost'].forEach(id => { const el=document.getElementById(id); if(el){el.value='';el.disabled=true;} });
+    ['grn-entry-qty','grn-entry-cost','grn-entry-discount'].forEach(id => { const el=document.getElementById(id); if(el){el.value='';el.disabled=true;} });
     const ab = document.getElementById('grn-add-btn'); if(ab) ab.disabled=true;
 }
 function calculateGrnTotals() {
-    let total = 0;
+    let subtotal = 0;
     document.querySelectorAll('#grn-items tr').forEach(row => {
         const qty=parseFloat(row.querySelector('.grn-qty')?.value)||0;
         const cost=parseFloat(row.querySelector('.grn-cost')?.value)||0;
-        const tc=row.querySelector('.grn-total'); if(tc) tc.innerText=(qty*cost).toFixed(2);
-        total+=qty*cost;
+        const disc=parseFloat(row.querySelector('.grn-disc')?.value)||0;
+        const lineTotal = (qty*cost)-disc;
+        const tc=row.querySelector('.grn-total'); if(tc) tc.innerText=lineTotal.toFixed(2);
+        subtotal+=lineTotal;
     });
-    const sEl=document.getElementById('grn-subtotal'); if(sEl) sEl.innerText=total.toFixed(2);
-    const tEl=document.getElementById('grn-total');    if(tEl) tEl.innerText=total.toFixed(2);
+    const sEl=document.getElementById('grn-subtotal'); if(sEl) sEl.innerText=subtotal.toFixed(2);
+    const bdEl=document.getElementById('grn-bill-discount');
+    const billDisc = bdEl ? (parseFloat(bdEl.value)||0) : 0;
+    const tEl=document.getElementById('grn-total');    if(tEl) tEl.innerText=(subtotal-billDisc).toFixed(2);
 }
 if (closeStockBtn) closeStockBtn.addEventListener('click', () => showContent('dashboard-view'));
 if (saveGrnBtn) {
@@ -322,17 +329,20 @@ if (saveGrnBtn) {
         const items = [];
         let totalCost = 0;
 
+        let billDisc = parseFloat(document.getElementById('grn-bill-discount')?.value) || 0;
+
         gi.querySelectorAll('tr').forEach(row => {
             const pNo=row.cells[0]?.innerText, name=row.cells[1]?.innerText;
             const qty=parseFloat(row.querySelector('.grn-qty')?.value)||0;
             const cost=parseFloat(row.querySelector('.grn-cost')?.value)||0;
-            const lineTotal = qty * cost;
-            const sellPrice=parseFloat(row.querySelector('.grn-sell-price')?.value)||0;
-            items.push({ partNo: pNo, name, qty, cost, total: lineTotal, returnedQty: 0 });
+            const disc=parseFloat(row.querySelector('.grn-disc')?.value)||0;
+            const lineTotal = (qty * cost) - disc;
+            items.push({ partNo: pNo, name, qty, cost, discount: disc, total: lineTotal, returnedQty: 0 });
             totalCost += lineTotal;
             const item=mockDB.items.find(i=>i.partNo===pNo);
-            if(item){item.stock=(item.stock||0)+qty;item.isUsed=true; if(sellPrice>0) item.price=sellPrice; }
+            if(item){item.stock=(item.stock||0)+qty;item.isUsed=true;} // Do not update sell price from GRN per user request
         });
+        totalCost -= billDisc;
 
         // Persist GRN record
         mockDB.grns.push({
@@ -343,6 +353,7 @@ if (saveGrnBtn) {
             refNo,
             paymentTerms: payTerms,
             items,
+            billDiscount: billDisc,
             totalCost,
             payments: [],
             totalPaid: payTerms === 'cash' ? totalCost : 0,
@@ -355,21 +366,21 @@ if (saveGrnBtn) {
     });
 }
 
-// GRN Part Search
 const grnPartSearch = document.getElementById('grn-part-search');
 const grnDropdown   = document.getElementById('grn-autocomplete-dropdown');
 const grnEntryQty   = document.getElementById('grn-entry-qty');
 const grnEntryCost  = document.getElementById('grn-entry-cost');
-const grnEntryPrice = document.getElementById('grn-entry-price');
+const grnEntryDiscount = document.getElementById('grn-entry-discount');
 const grnAddBtn     = document.getElementById('grn-add-btn');
 const grnItemsTable = document.getElementById('grn-items');
+const grnBillDiscInput = document.getElementById('grn-bill-discount');
 let grnSelectedPart = null;
 
 if (grnPartSearch) {
     grnPartSearch.addEventListener('input', (e) => {
         const q=e.target.value.toLowerCase().trim();
         grnDropdown.innerHTML=''; grnSelectedPart=null;
-        grnEntryQty.disabled=true; grnEntryCost.disabled=true; if(grnEntryPrice) grnEntryPrice.disabled=true; grnAddBtn.disabled=true;
+        grnEntryQty.disabled=true; grnEntryCost.disabled=true; if(grnEntryDiscount) grnEntryDiscount.disabled=true; grnAddBtn.disabled=true;
         if(!q){grnDropdown.style.display='none';return;}
         const matches=mockDB.items.filter(p=>p.name.toLowerCase().includes(q)||p.partNo.toLowerCase().includes(q));
         if(matches.length>0){
@@ -386,29 +397,30 @@ if (grnPartSearch) {
     function selectGrnPart(part) {
         grnSelectedPart=part; grnPartSearch.value=part.name;
         grnEntryCost.value=(parseFloat(part.price)||0).toFixed(2); grnEntryQty.value=1;
-        if(grnEntryPrice) { grnEntryPrice.value=(parseFloat(part.price)||0).toFixed(2); grnEntryPrice.disabled=false; }
+        if(grnEntryDiscount) { grnEntryDiscount.value=''; grnEntryDiscount.disabled=false; }
         grnEntryQty.disabled=false; grnEntryCost.disabled=false; grnAddBtn.disabled=false;
         grnDropdown.style.display='none'; grnEntryQty.focus();
     }
     function addGrnEntry() {
         if(!grnSelectedPart) return;
         const qty=parseFloat(grnEntryQty.value)||1, cost=parseFloat(grnEntryCost.value)||0;
-        const sellPrice = grnEntryPrice ? (parseFloat(grnEntryPrice.value)||0) : 0;
+        const disc = parseFloat(grnEntryDiscount?.value)||0;
+        const lineTotal = (qty * cost) - disc;
         const row=document.createElement('tr');
         row.innerHTML=`<td>${grnSelectedPart.partNo}</td><td>${grnSelectedPart.name}</td>
             <td><input type="number" class="item-qty glass-input num-input grn-qty" value="${qty}" min="1" style="width:100%;text-align:center;"></td>
             <td><input type="number" class="item-price glass-input num-input grn-cost" value="${cost.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
-            <td><input type="number" class="glass-input num-input grn-sell-price" value="${sellPrice.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
-            <td class="grn-total">${(qty*cost).toFixed(2)}</td>
+            <td><input type="number" class="glass-input num-input grn-disc" value="${disc.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+            <td class="grn-total">${lineTotal.toFixed(2)}</td>
             <td><button class="action-btn text-danger grn-remove-btn">×</button></td>`;
         grnItemsTable.appendChild(row);
         grnPartSearch.value=''; grnEntryQty.value=''; grnEntryCost.value='';
-        if(grnEntryPrice) { grnEntryPrice.value=''; grnEntryPrice.disabled=true; }
+        if(grnEntryDiscount) { grnEntryDiscount.value=''; grnEntryDiscount.disabled=true; }
         grnEntryQty.disabled=true; grnEntryCost.disabled=true; grnAddBtn.disabled=true;
         grnSelectedPart=null; grnPartSearch.focus(); calculateGrnTotals();
     }
     grnAddBtn.addEventListener('click', addGrnEntry);
-    [grnPartSearch,grnEntryQty,grnEntryCost,grnEntryPrice].filter(Boolean).forEach(inp=>{
+    [grnPartSearch,grnEntryQty,grnEntryCost,grnEntryDiscount].filter(Boolean).forEach(inp=>{
         inp.addEventListener('keydown',(e)=>{
             if(e.key==='Enter'){e.preventDefault();
                 if(grnSelectedPart) addGrnEntry();
@@ -418,9 +430,10 @@ if (grnPartSearch) {
     });
 }
 if(grnItemsTable){
-    grnItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('grn-qty')||e.target.classList.contains('grn-cost'))calculateGrnTotals();});
+    grnItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('grn-qty')||e.target.classList.contains('grn-cost')||e.target.classList.contains('grn-disc'))calculateGrnTotals();});
     grnItemsTable.addEventListener('click',(e)=>{if(e.target.classList.contains('grn-remove-btn')){e.target.closest('tr').remove();calculateGrnTotals();}});
 }
+if(grnBillDiscInput) grnBillDiscInput.addEventListener('input', calculateGrnTotals);
 
 // === INVOICE TAX & ITEMS ===
 const invoiceCustomerSelect  = document.getElementById('invoice-customer');
@@ -447,10 +460,17 @@ function safeCalculateTotals() {
     if (tbl) tbl.querySelectorAll('tr').forEach(row => {
         const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
         const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-        const td = row.querySelector('.item-total'); if (td) td.innerText = (qty*price).toFixed(2);
-        sub += qty * price;
+        const disc = parseFloat(row.querySelector('.item-disc')?.value) || 0;
+        const lineTotal = (qty * price) - disc;
+        const td = row.querySelector('.item-total'); if (td) td.innerText = lineTotal.toFixed(2);
+        sub += lineTotal;
     });
     if (subEl) subEl.innerText = sub.toFixed(2);
+    
+    // Apply Bill Discount
+    const bdEl = document.getElementById('invoice-bill-discount');
+    const billDisc = bdEl ? (parseFloat(bdEl.value) || 0) : 0;
+    sub = sub - billDisc;
     baseSubtotal = sub;
 
     const isTax = taxCb ? taxCb.checked : false;
@@ -479,14 +499,26 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
     const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
     const entryQty             = document.getElementById('entry-qty');
     const entryPrice           = document.getElementById('entry-price');
+    const entryDiscount        = document.getElementById('entry-discount');
     const addEntryBtn          = document.getElementById('add-entry-btn');
     let selectedPart = null;
+    let activeDropdownIndex = -1;
+
+    function updateDropdownFocus(items) {
+        items.forEach((item, idx) => {
+            if (idx === activeDropdownIndex) {
+                item.style.background = 'var(--tree-hover-bg)';
+            } else {
+                item.style.background = 'transparent';
+            }
+        });
+    }
 
     if(partSearchInput){
         partSearchInput.addEventListener('input',(e)=>{
             const q=e.target.value.toLowerCase().trim();
-            autocompleteDropdown.innerHTML=''; selectedPart=null;
-            entryQty.disabled=true; entryPrice.disabled=true; addEntryBtn.disabled=true;
+            autocompleteDropdown.innerHTML=''; selectedPart=null; activeDropdownIndex=-1;
+            entryQty.disabled=true; entryPrice.disabled=true; if(entryDiscount) entryDiscount.disabled=true; addEntryBtn.disabled=true;
             if(!q){autocompleteDropdown.style.display='none';return;}
             const matches=mockDB.items.filter(p=>p.name.toLowerCase().includes(q)||p.partNo.toLowerCase().includes(q));
             if(matches.length>0){
@@ -503,37 +535,76 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
         function selectPart(part) {
             selectedPart=part; partSearchInput.value=part.name;
             entryPrice.value=(parseFloat(part.price)||0).toFixed(2); entryQty.value=1;
+            if(entryDiscount) { entryDiscount.value=''; entryDiscount.disabled=false; }
             entryQty.disabled=false; entryPrice.disabled=false; addEntryBtn.disabled=false;
             autocompleteDropdown.style.display='none'; entryQty.focus();
         }
         function addCurrentEntry() {
             if(!selectedPart) return;
             const qty=parseInt(entryQty.value)||1, price=parseFloat(entryPrice.value)||selectedPart.price;
+            
+            // Check stock available
+            const dbItem = mockDB.items.find(i => i.partNo === selectedPart.partNo);
+            if (!dbItem || (dbItem.stock || 0) < qty) {
+                alert(`Insufficient stock! Currently available: ${dbItem ? dbItem.stock || 0 : 0} units.`);
+                return;
+            }
+            
+            const disc=parseFloat(entryDiscount?.value)||0;
+            const lineTotal = (qty*price)-disc;
             const row=document.createElement('tr');
             row.innerHTML=`<td>${selectedPart.partNo}</td><td>${selectedPart.name}</td>
                 <td><input type="number" class="item-qty glass-input num-input" value="${qty}" min="1" style="width:100%;text-align:center;"></td>
                 <td><input type="number" class="item-price glass-input num-input" value="${price.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
-                <td class="item-total">${(qty*price).toFixed(2)}</td>
+                <td><input type="number" class="item-disc glass-input num-input" value="${disc.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+                <td class="item-total">${lineTotal.toFixed(2)}</td>
                 <td><button class="action-btn text-danger remove-item-btn">×</button></td>`;
             invoiceItemsTable.appendChild(row);
             partSearchInput.value=''; entryQty.value=''; entryPrice.value='';
+            if(entryDiscount) { entryDiscount.value=''; entryDiscount.disabled=true; }
             entryQty.disabled=true; entryPrice.disabled=true; addEntryBtn.disabled=true;
             selectedPart=null; partSearchInput.focus(); safeCalculateTotals();
         }
         addEntryBtn.addEventListener('click', addCurrentEntry);
-        [partSearchInput,entryQty,entryPrice].forEach(inp=>{
-            inp.addEventListener('keydown',(e)=>{
-                if(e.key==='Enter'){e.preventDefault();
-                    if(selectedPart) addCurrentEntry();
-                    else if(inp===partSearchInput&&autocompleteDropdown.children.length>0) autocompleteDropdown.children[0].click();
+        
+        partSearchInput.addEventListener('keydown', (e) => {
+            const items = autocompleteDropdown.querySelectorAll('.dropdown-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                activeDropdownIndex = (activeDropdownIndex + 1) % items.length;
+                updateDropdownFocus(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                activeDropdownIndex = (activeDropdownIndex - 1 + items.length) % items.length;
+                updateDropdownFocus(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (activeDropdownIndex >= 0 && items[activeDropdownIndex]) {
+                    items[activeDropdownIndex].click();
+                } else if (items.length > 0) {
+                    items[0].click();
                 }
-            });
+            }
         });
+
+        entryQty.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); entryPrice.focus(); }
+        });
+        entryPrice.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); if (entryDiscount && !entryDiscount.disabled) entryDiscount.focus(); else addCurrentEntry(); }
+        });
+        if (entryDiscount) {
+            entryDiscount.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); addCurrentEntry(); }
+            });
+        }
     }
     if(invoiceItemsTable){
-        invoiceItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('item-qty')||e.target.classList.contains('item-price'))safeCalculateTotals();});
+        invoiceItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('item-qty')||e.target.classList.contains('item-price')||e.target.classList.contains('item-disc'))safeCalculateTotals();});
         invoiceItemsTable.addEventListener('click',(e)=>{if(e.target.classList.contains('remove-item-btn')){e.target.closest('tr').remove();safeCalculateTotals();}});
     }
+    const invBillDiscInput = document.getElementById('invoice-bill-discount');
+    if(invBillDiscInput) invBillDiscInput.addEventListener('input', safeCalculateTotals);
     safeCalculateTotals();
     const printBtn=document.getElementById('print-invoice-btn');
     if(printBtn){
@@ -546,6 +617,8 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
             const payTerms = document.getElementById('invoice-payment-terms')?.value || 'cash';
             const isTax = document.getElementById('tax-registered-checkbox')?.checked || false;
             const invItems = [];
+            const bdEl = document.getElementById('invoice-bill-discount');
+            let billDisc = bdEl ? (parseFloat(bdEl.value)||0) : 0;
             let subtotal = 0;
 
             document.querySelectorAll('#invoice-items tr').forEach(row => {
@@ -553,12 +626,14 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
                 const name = row.cells[1]?.innerText;
                 const qty = parseFloat(row.querySelector('.item-qty')?.value) || 0;
                 const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
-                const lineTotal = qty * price;
-                invItems.push({ partNo: pNo, name, qty, price, total: lineTotal, returnedQty: 0 });
+                const disc = parseFloat(row.querySelector('.item-disc')?.value) || 0;
+                const lineTotal = (qty * price) - disc;
+                invItems.push({ partNo: pNo, name, qty, price, discount: disc, total: lineTotal, returnedQty: 0 });
                 subtotal += lineTotal;
             });
 
             if (invItems.length === 0) { alert('Add at least one item before saving.'); return; }
+            subtotal -= billDisc;
 
             const tax = isTax ? subtotal * 0.18 : 0;
             const grandTotal = subtotal + tax;
@@ -572,6 +647,7 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
                 paymentTerms: payTerms,
                 taxRegistered: isTax,
                 items: invItems,
+                billDiscount: billDisc,
                 subtotal,
                 tax,
                 grandTotal,
@@ -718,18 +794,26 @@ const mockReports = {
     profit_loss:      { title:'Profit & Loss',                        headers:['Category','Amount'],                                   data:[['Sales Revenue',"<span style='color:#10B981'>$5,400.00</span>"],['Cost of Goods Sold',"<span style='color:#EF4444'>-$2,100.00</span>"],['<b>Gross Profit</b>',"<b><span style='color:#10B981'>$3,300.00</span></b>"],['Operating Expenses',"<span style='color:#EF4444'>-$800.00</span>"],['<b>Net Profit</b>',"<b><span style='color:#10B981'>$2,500.00</span></b>"]] }
 };
 
-const creditorTransactions = {
-    1:[{date:'28 Mar 2026',invoiceNo:'GRN-20260328-001',description:'Bulk Oil Filters',amount:'$1,200.00',dueDate:'12 May 2026',status:'Pending'}],
-    2:[{date:'10 Apr 2026',invoiceNo:'GRN-20260410-002',description:'Brake Pads x8',amount:'$340.00',dueDate:'24 Apr 2026',status:'Pending'}]
-};
-const debtorTransactions = {
-    1:[{date:'01 Apr 2026',invoiceNo:'INV-20260401-001',description:'Spare Parts',amount:'$177.00',dueDate:'01 May 2026',status:'Pending'},{date:'10 Apr 2026',invoiceNo:'INV-20260410-005',description:'Oil Filters x10',amount:'$155.00',dueDate:'10 May 2026',status:'Pending'}],
-    2:[{date:'02 Apr 2026',invoiceNo:'INV-20260402-002',description:'Brake Pads',amount:'$45.50',dueDate:'02 May 2026',status:'Pending'}]
-};
-
 function renderEntityCard(entity, transactions, type) {
     const card=document.getElementById('report-debtor-card'); if(!card||!entity){if(card)card.style.display='none';return;}
-    const totalDue=transactions.reduce((s,t)=>s+parseFloat(t.amount.replace(/[$,]/g,'')),0);
+    let totalDue=0, totalPaid=0;
+    const pendingTx = [], settledTx = [];
+
+    transactions.forEach(tx => {
+        const b = calcBalance(tx, type==='creditor'?'grn':'invoice');
+        totalDue += b.effectiveTotal;
+        totalPaid += b.totalPaid;
+        const status = txStatus(tx, type==='creditor'?'grn':'invoice');
+        const p = {
+            date: tx.date,
+            invoiceNo: tx.id,
+            amount: b.effectiveTotal.toFixed(2),
+            due: b.balance.toFixed(2),
+            status: status==='paid'?'Settled':status==='partial'?'Partial':'Unpaid'
+        };
+        if (b.balance > 0) pendingTx.push(p); else settledTx.push(p);
+    });
+
     const accent=type==='creditor'?'#F59E0B':'#10B981', label=type==='creditor'?'TOTAL PAYABLE':'TOTAL OUTSTANDING', txLabel=type==='creditor'?'GRN No':'Invoice No';
     card.style.display='block';
     card.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:20px;margin-bottom:20px;">
@@ -739,12 +823,22 @@ function renderEntityCard(entity, transactions, type) {
             <p style="color:var(--text-secondary);">Credit: <strong>${entity.creditPeriod} days</strong> | Tax Reg: <strong>${entity.taxRegistered?'Yes':'No'}</strong></p></div>
         <div style="text-align:right;background:var(--input-bg);border:1px solid var(--card-border);border-radius:12px;padding:16px 24px;">
             <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:4px;">${label}</p>
-            <p style="font-size:2rem;font-weight:700;color:${accent};">$${totalDue.toFixed(2)}</p></div></div>
-    <table class="invoice-table"><thead><tr><th>Date</th><th>${txLabel}</th><th>Description</th><th>Amount</th><th>Due Date</th><th>Status</th></tr></thead>
-    <tbody>${transactions.length>0?transactions.map(t=>`<tr><td>${t.date}</td><td>${t.invoiceNo}</td><td>${t.description}</td>
-        <td style="font-weight:600;color:${accent};">${t.amount}</td><td>${t.dueDate}</td>
-        <td><span style="background:rgba(251,191,36,0.15);color:#F59E0B;padding:3px 10px;border-radius:20px;font-size:0.85rem;font-weight:600;">${t.status}</span></td></tr>`).join('')
-        :'<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);padding:30px;">No transactions found.</td></tr>'}</tbody></table>`;
+            <p style="font-size:2rem;font-weight:700;color:${accent};">${(totalDue - totalPaid).toFixed(2)}</p>
+        </div>
+    </div>
+    <h4 style="margin-top:20px;margin-bottom:10px;color:#EF4444;">Pending & Partial Invoices</h4>
+    <table class="invoice-table"><thead><tr><th>Date</th><th>${txLabel}</th><th>Total Amount</th><th>Balance Due</th><th>Status</th></tr></thead>
+    <tbody>${pendingTx.length>0?pendingTx.map(t=>`<tr><td>${t.date}</td><td>${t.invoiceNo}</td><td>${t.amount}</td>
+        <td style="font-weight:600;color:#EF4444;">${t.due}</td>
+        <td><span style="background:rgba(239,68,68,0.15);color:#EF4444;padding:3px 10px;border-radius:20px;font-size:0.85rem;font-weight:600;">${t.status}</span></td></tr>`).join('')
+        :'<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:15px;">No pending transactions!</td></tr>'}</tbody></table>
+        
+    <h4 style="margin-top:20px;margin-bottom:10px;color:#10B981;">Settled Invoices</h4>
+    <table class="invoice-table"><thead><tr><th>Date</th><th>${txLabel}</th><th>Total Amount</th><th>Balance Due</th><th>Status</th></tr></thead>
+    <tbody>${settledTx.length>0?settledTx.map(t=>`<tr><td>${t.date}</td><td>${t.invoiceNo}</td><td>${t.amount}</td>
+        <td style="font-weight:600;color:#10B981;">0.00</td>
+        <td><span style="background:rgba(16,185,129,0.15);color:#10B981;padding:3px 10px;border-radius:20px;font-size:0.85rem;font-weight:600;">${t.status}</span></td></tr>`).join('')
+        :'<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:15px;">No settled transactions.</td></tr>'}</tbody></table>`;
     const mt=document.querySelector('#report-view > .invoice-table'); if(mt) mt.style.display='none';
 }
 
@@ -755,6 +849,9 @@ const filterBtn=document.querySelector('#report-date-filters button');
 if(filterBtn){
     filterBtn.addEventListener('click',()=>{
         if(!currentReportId) return;
+        if(currentReportId === 'item_ledger'){ renderLedgerTable(currentLedgerItem); return; }
+        if(currentReportId.startsWith('tax_') || currentReportId === 'payment_summary') { renderReport(currentReportId); return; }
+        
         const inputs=document.querySelectorAll('#report-date-filters input[type="date"]');
         if(inputs.length<2) return;
         const from=new Date(inputs[0].value), to=new Date(inputs[1].value); to.setHours(23,59,59);
@@ -772,12 +869,14 @@ function renderReport(reportId) {
     showContent('report-view');
 
     const debtorSelector=document.getElementById('report-debtor-selector');
+    const itemSelector=document.getElementById('report-item-selector');
     const debtorCard=document.getElementById('report-debtor-card');
     const mainTable=document.querySelector('#report-view > .invoice-table');
     const dateFilters=document.getElementById('report-date-filters');
 
     if(debtorCard){debtorCard.style.display='none';debtorCard.innerHTML='';}
     if(debtorSelector) debtorSelector.style.display='none';
+    if(itemSelector) itemSelector.style.display='none';
 
     // === DYNAMIC REPORT TYPES (from real data) ===
     if (reportId === 'pending_debtors') {
@@ -870,14 +969,71 @@ function renderReport(reportId) {
         return;
     }
 
+    if (reportId === 'tax_output') {
+        reportTitle.innerHTML = '📊 Output Tax (Sales Tax)';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='flex';
+        
+        let from=null, to=null;
+        const inputs=document.querySelectorAll('#report-date-filters input[type="date"]');
+        if(inputs.length===2 && inputs[0].value) { from=new Date(inputs[0].value); to=new Date(inputs[1].value); to.setHours(23,59,59); }
+
+        let totalTaxable=0, totalTax=0;
+        const rows = mockDB.invoices.filter(i => {
+            if (i.tax <= 0) return false;
+            if (from) { const d = new Date(i.date); if (d < from || d > to) return false; }
+            return true;
+        }).map(i => {
+            totalTaxable += i.subtotal; totalTax += i.tax;
+            return `<tr><td>${i.date}</td><td>${i.customerName}</td><td>${i.id}</td><td>${i.subtotal.toFixed(2)}</td><td style="color:#10B981;font-weight:bold;">${i.tax.toFixed(2)}</td></tr>`;
+        });
+        rows.push(`<tr><td colspan="3" style="text-align:right;"><strong>TOTAL</strong></td><td><strong>${totalTaxable.toFixed(2)}</strong></td><td style="color:#10B981;font-weight:bold;">${totalTax.toFixed(2)}</td></tr>`);
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Date</th><th>Customer</th><th>Invoice No</th><th>Taxable Amount</th><th>Tax (18%)</th>';
+        if(reportTableBody) reportTableBody.innerHTML = rows.length > 1 ? rows.join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:30px;">No taxable sales found in range!</td></tr>';
+        return;
+    }
+
+    if (reportId === 'tax_input') {
+        reportTitle.innerHTML = '📊 Input Tax (Purchase Tax)';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='flex';
+        
+        let from=null, to=null;
+        const inputs=document.querySelectorAll('#report-date-filters input[type="date"]');
+        if(inputs.length===2 && inputs[0].value) { from=new Date(inputs[0].value); to=new Date(inputs[1].value); to.setHours(23,59,59); }
+
+        let totalVal=0;
+        const rows = mockDB.grns.filter(g => {
+            if (from) { const d = new Date(g.date); if (d < from || d > to) return false; }
+            return true;
+        }).map(g => {
+            totalVal += g.totalCost;
+            return `<tr><td>${g.date}</td><td>${g.supplierName}</td><td>${g.id}</td><td>${g.totalCost.toFixed(2)}</td><td style="color:#10B981;font-weight:bold;">0.00</td></tr>`;
+        });
+        rows.push(`<tr><td colspan="3" style="text-align:right;"><strong>TOTAL</strong></td><td><strong>${totalVal.toFixed(2)}</strong></td><td style="color:#10B981;font-weight:bold;">0.00</td></tr>`);
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Date</th><th>Supplier</th><th>GRN No</th><th>Total Cost</th><th>Input Tax</th>';
+        if(reportTableBody) reportTableBody.innerHTML = rows.length > 1 ? rows.join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);padding:30px;">No purchases found in range!</td></tr>';
+        return;
+    }
+
+    if (reportId === 'item_ledger') {
+        reportTitle.innerHTML = '📌 Item Ledger / Stock Movement';
+        if(mainTable) mainTable.style.display='';
+        if(dateFilters) dateFilters.style.display='flex';
+        if(itemSelector) itemSelector.style.display='block';
+        if(reportTableHeader) reportTableHeader.innerHTML = '<th>Date</th><th>Type</th><th>Ref No</th><th>Party</th><th>Qty In</th><th>Qty Out</th><th>Cost / Price</th>';
+        if(reportTableBody) reportTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">Search and select an item to view ledger.</td></tr>';
+        return;
+    }
+
     // === ORIGINAL STATIC REPORTS ===
     const rpt=mockReports[reportId]; if(!rpt) return;
     reportTitle.innerHTML=rpt.title;
 
-    const needsSelector=['ap_summary','ar_customer','ar_summary'].includes(reportId);
-    const isAP = reportId==='ap_summary';
+    const needsSelector=['ap_supplier','ar_customer','ap_summary','ar_summary'].includes(reportId);
+    const isAP = ['ap_supplier','ap_summary'].includes(reportId);
 
-    if(needsSelector){
+    if (['ap_supplier','ar_customer'].includes(reportId)) {
         if(debtorSelector) debtorSelector.style.display='block';
         if(mainTable) mainTable.style.display='none';
         if(dateFilters) dateFilters.style.display='none';
@@ -893,14 +1049,19 @@ function renderReport(reportId) {
                 if(!id){if(debtorCard){debtorCard.style.display='none';debtorCard.innerHTML='';}return;}
                 if(isAP){
                     const c=mockDB.creditors.find(x=>x.id===id);
-                    renderEntityCard(c,creditorTransactions[id]||[],'creditor');
+                    const grns = mockDB.grns.filter(g => g.supplierId === id || g.supplierName === c.name);
+                    renderEntityCard(c,grns,'creditor');
                 } else {
                     const d=mockDB.debtors.find(x=>x.id===id);
-                    renderEntityCard(d,debtorTransactions[id]||[],'debtor');
+                    const invs = mockDB.invoices.filter(i => i.customerId === id || i.customerName === d.name);
+                    renderEntityCard(d,invs,'debtor');
                 }
             });
         }
-    } else {
+        return;
+    }
+
+    if(needsSelector){
         if(debtorSelector) debtorSelector.style.display='none';
         if(mainTable) mainTable.style.display='';
         if(dateFilters) dateFilters.style.display='flex';
@@ -1031,15 +1192,16 @@ function openTxModal(type, id) {
                 </div>
             </div>
             <table class="invoice-table"><thead><tr>
-                <th>Part No</th><th>Item</th><th>Qty</th><th>Price</th><th>Total</th><th>Returned</th>
+                <th>Part No</th><th>Item</th><th>Qty</th><th>Price</th><th>Disc.</th><th>Total</th><th>Returned</th>
             </tr></thead><tbody>
                 ${inv.items.map(it => `<tr>
                     <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
-                    <td>${it.price.toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
+                    <td>${it.price.toFixed(2)}</td><td style="color:#10B981;">${(it.discount||0).toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
                     <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};font-weight:600;">${it.returnedQty || 0}</td>
                 </tr>`).join('')}
             </tbody></table>
-            ${inv.tax > 0 ? `<p style="text-align:right;margin-top:10px;color:var(--text-secondary);">Subtotal: ${inv.subtotal.toFixed(2)} | Tax (18%): ${inv.tax.toFixed(2)}</p>` : ''}
+            ${inv.billDiscount > 0 ? `<p style="text-align:right;margin-top:10px;color:var(--text-secondary);">Bill Discount: <strong style="color:#10B981;">-${inv.billDiscount.toFixed(2)}</strong></p>` : ''}
+            ${inv.tax > 0 ? `<p style="text-align:right;margin-top:5px;color:var(--text-secondary);">Subtotal: ${inv.subtotal.toFixed(2)} | Tax (18%): ${inv.tax.toFixed(2)}</p>` : ''}
             ${payHistoryHtml}
         `;
         const hasReturnable = inv.items.some(it => (it.returnedQty || 0) < it.qty);
@@ -1084,14 +1246,15 @@ function openTxModal(type, id) {
                 </div>
             </div>
             <table class="invoice-table"><thead><tr>
-                <th>Part No</th><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Total</th><th>Returned</th>
+                <th>Part No</th><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Disc.</th><th>Total</th><th>Returned</th>
             </tr></thead><tbody>
                 ${grn.items.map(it => `<tr>
                     <td>${it.partNo}</td><td>${it.name}</td><td>${it.qty}</td>
-                    <td>${it.cost.toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
+                    <td>${it.cost.toFixed(2)}</td><td style="color:#10B981;">${(it.discount||0).toFixed(2)}</td><td>${it.total.toFixed(2)}</td>
                     <td style="color:${(it.returnedQty||0)>0?'#EF4444':'var(--text-secondary)'};font-weight:600;">${it.returnedQty || 0}</td>
                 </tr>`).join('')}
             </tbody></table>
+            ${grn.billDiscount > 0 ? `<p style="text-align:right;margin-top:10px;color:var(--text-secondary);">Bill Discount: <strong style="color:#10B981;">-${grn.billDiscount.toFixed(2)}</strong></p>` : ''}
             ${payHistoryHtml}
         `;
         const hasReturnable = grn.items.some(it => (it.returnedQty || 0) < it.qty);
@@ -1373,7 +1536,81 @@ function processPayment(type, id) {
         payment.chequeDate = chequeDate;
         payment.bankingDate = bankingDate;
     }
+// === ITEM LEDGER LOGIC ===
+let currentLedgerItem = null;
+function renderLedgerTable(partNo) {
+    if (!partNo) return;
+    const body = document.getElementById('report-table-body');
+    if (!body) return;
+    const movements = [];
+    mockDB.grns.forEach(grn => {
+        grn.items.forEach(it => { if(it.partNo === partNo) movements.push({ date: new Date(grn.date), dStr: grn.date, type: 'GRN (In)', ref: grn.id, party: grn.supplierName, qtyIn: it.qty, qtyOut: 0, val: it.cost }); });
+    });
+    mockDB.invoices.forEach(inv => {
+        inv.items.forEach(it => { if(it.partNo === partNo) movements.push({ date: new Date(inv.date), dStr: inv.date, type: 'Invoice (Out)', ref: inv.id, party: inv.customerName, qtyIn: 0, qtyOut: it.qty, val: it.price }); });
+    });
+    mockDB.purchaseReturns.forEach(pr => {
+        pr.items.forEach(it => { if(it.partNo === partNo) movements.push({ date: new Date(pr.date), dStr: pr.date, type: 'Purchase Return (Out)', ref: pr.id, party: pr.supplierName, qtyIn: 0, qtyOut: it.qty, val: it.cost }); });
+    });
+    mockDB.salesReturns.forEach(sr => {
+        sr.items.forEach(it => { if(it.partNo === partNo) movements.push({ date: new Date(sr.date), dStr: sr.date, type: 'Sales Return (In)', ref: sr.id, party: sr.customerName, qtyIn: it.qty, qtyOut: 0, val: it.price }); });
+    });
 
+    movements.sort((a,b) => a.date - b.date);
+
+    // Apply date filters if they exist
+    const inputs=document.querySelectorAll('#report-date-filters input[type="date"]');
+    let filtered = movements;
+    if(inputs.length===2 && inputs[0].value && inputs[1].value) {
+        const from=new Date(inputs[0].value), to=new Date(inputs[1].value); to.setHours(23,59,59);
+        filtered = movements.filter(m => { const d = new Date(m.dStr); return d >= from && d <= to; });
+    }
+
+    if (filtered.length === 0) {
+        const dbItem = mockDB.items.find(i=>i.partNo===partNo);
+        document.getElementById('ledger-stock-display')?.setAttribute('value', dbItem ? dbItem.stock||0 : 0);
+        body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">No movement found for this item in date range.</td></tr>';
+        return;
+    }
+
+    let runningStock = 0;
+    body.innerHTML = filtered.map(m => {
+        runningStock += m.qtyIn - m.qtyOut;
+        return `<tr>
+        <td>${m.dStr}</td><td>${m.type}</td><td style="color:var(--input-focus);">${m.ref}</td><td>${m.party}</td>
+        <td style="color:#10B981;font-weight:bold;">${m.qtyIn>0 ? m.qtyIn : '-'}</td>
+        <td style="color:#EF4444;font-weight:bold;">${m.qtyOut>0 ? m.qtyOut : '-'}</td>
+        <td>${m.val.toFixed(2)}</td>
+    </tr>`}).join('');
+    
+    // Set Dashboard stock visibility if elements existed (Optional implementation detail)
+}
+
+const ledgerSearch = document.getElementById('report-item-search');
+const ledgerDropdown = document.getElementById('report-item-dropdown');
+
+if (ledgerSearch) {
+    ledgerSearch.addEventListener('input', (e) => {
+        const q=e.target.value.toLowerCase().trim();
+        ledgerDropdown.innerHTML=''; currentLedgerItem=null;
+        if(!q){ ledgerDropdown.style.display='none'; return; }
+        const matches = mockDB.items.filter(p=>p.name.toLowerCase().includes(q) || p.partNo.toLowerCase().includes(q));
+        if (matches.length > 0) {
+            ledgerDropdown.style.display='block';
+            matches.forEach(part => {
+                const d=document.createElement('div'); d.className='dropdown-item';
+                d.innerHTML=`<span class="dropdown-item-title">${part.name}</span><span class="dropdown-item-desc">${part.partNo} (Stock: ${part.stock||0})</span>`;
+                d.addEventListener('click',() => {
+                    currentLedgerItem=part.partNo; ledgerSearch.value=`${part.partNo} - ${part.name}`;
+                    ledgerDropdown.style.display='none';
+                    renderLedgerTable(part.partNo);
+                });
+                ledgerDropdown.appendChild(d);
+            });
+        } else { ledgerDropdown.style.display='none'; }
+    });
+    document.addEventListener('click', (e) => { if(e.target!==ledgerSearch) if(ledgerDropdown) ledgerDropdown.style.display='none'; });
+}
     if (!tx.payments) tx.payments = [];
     tx.payments.push(payment);
     tx.totalPaid = (tx.totalPaid || 0) + amount;
