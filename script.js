@@ -160,26 +160,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function sidebarNav(title) {
         switch(title) {
             case 'Dashboard':        showContent('dashboard-view'); break;
-            case 'Point of Sale':
             case 'New Invoice':      initInvoiceNumber(); showContent('invoice-view'); break;
             case 'Invoice History':  renderHistory('invoices'); break;
             case 'Sales Returns':    renderHistory('salesReturns'); break;
-            case 'Customers':        openManagementTab('debtors'); break;
             case 'Settings':         openManagementTab('debtors'); break;
             case 'Stock In/Out':     initGrn(); showContent('add-stock-view'); break;
             case 'GRN History':      renderHistory('grns'); break;
             case 'Purchase Returns': renderHistory('purchaseReturns'); break;
-            case 'Categories':
-            case 'Products':         openManagementTab('items'); break;
         }
     }
 
     // Dashboard Quick-Action Buttons (by label text)
     document.querySelectorAll('.feature-item').forEach(item => {
         const label = item.querySelector('.feature-label')?.innerText.trim();
-        if (label === 'Point of Sale') item.addEventListener('click', () => { initInvoiceNumber(); showContent('invoice-view'); });
-        if (label === 'Customers')     item.addEventListener('click', () => openManagementTab('debtors'));
         if (label === 'Daily Summary') item.addEventListener('click', () => renderReport('daily_summary'));
+        if (label === 'Backup & Restore') item.addEventListener('click', handleBackupRestore);
+        if (label === 'New Invoice') item.addEventListener('click', () => { initInvoiceNumber(); showContent('invoice-view'); });
     });
 
     // Sidebar search
@@ -193,6 +189,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 }); // end DOMContentLoaded
+
+// === BACKUP & RESTORE ===
+function handleBackupRestore() {
+    const action = confirm('Click OK to Backup Data, or Cancel to Restore from File.');
+    if (action) {
+        // Backup
+        const backupDb = localStorage.getItem('pos-db');
+        const blob = new Blob([backupDb || JSON.stringify(DEFAULT_DB)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `pos-backup-${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } else {
+        // Restore
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (data) {
+                            localStorage.setItem('pos-db', ev.target.result);
+                            alert('Restore successful! Reloading...');
+                            location.reload();
+                        }
+                    } catch (err) {
+                        alert('Invalid backup file. Error: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+}
 
 // === INVOICE NUMBER ===
 function generateInvoiceNumber(n) {

@@ -1,0 +1,3 @@
+@echo off
+echo Starting Premium POS System...
+start index.html
