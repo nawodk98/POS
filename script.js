@@ -467,39 +467,13 @@ function safeCalculateTotals() {
     }
 }
 
-function calculateTotals() {
-    baseSubtotal=0;
-    if(!invoiceItemsTable) return;
-    invoiceItemsTable.querySelectorAll('tr').forEach(row=>{
-        const qty=parseFloat(row.querySelector('.item-qty')?.value)||0;
-        const price=parseFloat(row.querySelector('.item-price')?.value)||0;
-        const td=row.querySelector('.item-total'); if(td) td.innerText=(qty*price).toFixed(2);
-        baseSubtotal+=qty*price;
-    });
-    if(invoiceSubtotalDisplay) invoiceSubtotalDisplay.innerText=baseSubtotal.toFixed(2);
-    updateInvoiceDisplay();
-}
-function updateInvoiceDisplay() {
-    if(!taxRegisteredCheckbox) return;
-    const isTax=taxRegisteredCheckbox.checked;
-    if(isTax){
-        if(invoiceTitle){invoiceTitle.innerText='TAX INVOICE';invoiceTitle.style.color='#10B981';}
-        if(taxRow) taxRow.style.display='flex';
-        const tax=baseSubtotal*0.18;
-        if(invoiceTaxDisplay) invoiceTaxDisplay.innerText=tax.toFixed(2);
-        if(invoiceGrandTotal) invoiceGrandTotal.innerText=(baseSubtotal+tax).toFixed(2);
-    } else {
-        if(invoiceTitle){invoiceTitle.innerText='Standard Invoice';invoiceTitle.style.color='var(--input-focus)';}
-        if(taxRow) taxRow.style.display='none';
-        if(invoiceGrandTotal) invoiceGrandTotal.innerText=baseSubtotal.toFixed(2);
-    }
-}
+
 if(invoiceCustomerSelect&&taxRegisteredCheckbox){
     invoiceCustomerSelect.addEventListener('change',(e)=>{
         const opt=e.target.options[e.target.selectedIndex];
-        taxRegisteredCheckbox.checked=(opt.dataset.tax==='true'); updateInvoiceDisplay();
+        taxRegisteredCheckbox.checked=(opt.dataset.tax==='true'); safeCalculateTotals();
     });
-    taxRegisteredCheckbox.addEventListener('change', updateInvoiceDisplay);
+    taxRegisteredCheckbox.addEventListener('change', safeCalculateTotals);
 
     const partSearchInput      = document.getElementById('part-search-input');
     const autocompleteDropdown = document.getElementById('autocomplete-dropdown');
@@ -544,7 +518,7 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
             invoiceItemsTable.appendChild(row);
             partSearchInput.value=''; entryQty.value=''; entryPrice.value='';
             entryQty.disabled=true; entryPrice.disabled=true; addEntryBtn.disabled=true;
-            selectedPart=null; partSearchInput.focus(); calculateTotals();
+            selectedPart=null; partSearchInput.focus(); safeCalculateTotals();
         }
         addEntryBtn.addEventListener('click', addCurrentEntry);
         [partSearchInput,entryQty,entryPrice].forEach(inp=>{
@@ -557,10 +531,10 @@ if(invoiceCustomerSelect&&taxRegisteredCheckbox){
         });
     }
     if(invoiceItemsTable){
-        invoiceItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('item-qty')||e.target.classList.contains('item-price'))calculateTotals();});
-        invoiceItemsTable.addEventListener('click',(e)=>{if(e.target.classList.contains('remove-item-btn')){e.target.closest('tr').remove();calculateTotals();}});
+        invoiceItemsTable.addEventListener('input',(e)=>{if(e.target.classList.contains('item-qty')||e.target.classList.contains('item-price'))safeCalculateTotals();});
+        invoiceItemsTable.addEventListener('click',(e)=>{if(e.target.classList.contains('remove-item-btn')){e.target.closest('tr').remove();safeCalculateTotals();}});
     }
-    calculateTotals();
+    safeCalculateTotals();
     const printBtn=document.getElementById('print-invoice-btn');
     if(printBtn){
         printBtn.addEventListener('click',()=>{
@@ -681,13 +655,6 @@ if(settingsBtn&&managementView){
     });
 }
 
-const addProductBtn = document.getElementById('add-product-btn');
-if(addProductBtn){
-    addProductBtn.addEventListener('click',()=>{
-        openManagementTab('items');
-        setTimeout(()=>{ if(crudModalWrapper) crudModalWrapper.style.display='flex'; },100);
-    });
-}
 
 function renderMgmtView() {
     if(!mgmtTitle) return;
