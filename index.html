@@ -731,7 +731,410 @@
 
     <div id="print-overlay" class="print-only"></div>
 
+    <!-- =============================================
+         MULTITASK FLOATING TASKBAR
+    ============================================= -->
+    <div id="multitask-bar" class="multitask-bar glass-panel">
+        <div class="multitask-bar-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Multi-Task
+        </div>
+        <div class="multitask-actions">
+            <button class="mt-launch-btn" id="mt-stock-check-btn" title="Open Stock Check Panel" onclick="openFloatPanel('stock-check-panel')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Stock Check
+            </button>
+            <button class="mt-launch-btn mt-invoice" id="mt-invoice-btn" title="Open Quick Invoice Panel" onclick="openFloatPanel('quick-invoice-panel')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                New Invoice
+            </button>
+            <button class="mt-launch-btn mt-calc" title="Open Quick Calculator" onclick="openFloatPanel('calc-panel')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/></svg>
+                Calculator
+            </button>
+        </div>
+    </div>
+
+    <!-- =============================================
+         FLOATING PANEL: STOCK CHECK
+    ============================================= -->
+    <div id="stock-check-panel" class="float-panel glass-panel" style="top:80px; right:30px; width:380px;">
+        <div class="float-panel-header" onmousedown="startDrag(event,'stock-check-panel')">
+            <div class="float-panel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                Stock Check
+            </div>
+            <div class="float-panel-controls">
+                <button class="fp-ctrl-btn fp-min" onclick="minimizeFloatPanel('stock-check-panel')" title="Minimize">─</button>
+                <button class="fp-ctrl-btn fp-close" onclick="closeFloatPanel('stock-check-panel')" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="float-panel-body" id="stock-check-panel-body">
+            <div style="margin-bottom: 12px;">
+                <label class="fp-label">Search Part No. or Name</label>
+                <div class="autocomplete-wrapper" style="width:100%;">
+                    <input type="text" id="fp-part-search" placeholder="e.g. BRK-001 or Brake Pad..." class="glass-input fp-input" autocomplete="off">
+                    <div id="fp-part-dropdown" class="dropdown-content"></div>
+                </div>
+            </div>
+            <div id="fp-stock-result" class="fp-stock-result" style="display:none;">
+                <div class="fp-result-row">
+                    <div class="fp-result-card fp-card-green">
+                        <div class="fp-result-label">Available Stock</div>
+                        <div class="fp-result-value" id="fp-stock-qty">-</div>
+                    </div>
+                    <div class="fp-result-card fp-card-blue">
+                        <div class="fp-result-label">Selling Price</div>
+                        <div class="fp-result-value" id="fp-stock-price">-</div>
+                    </div>
+                </div>
+                <div class="fp-result-item-name" id="fp-stock-name"></div>
+            </div>
+            <div id="fp-stock-empty" class="fp-empty-state">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                <span>Type to search stock</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         FLOATING PANEL: QUICK INVOICE LAUNCHER
+    ============================================= -->
+    <div id="quick-invoice-panel" class="float-panel glass-panel" style="top:80px; right:430px; width:340px;">
+        <div class="float-panel-header" onmousedown="startDrag(event,'quick-invoice-panel')">
+            <div class="float-panel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Quick Invoice
+            </div>
+            <div class="float-panel-controls">
+                <button class="fp-ctrl-btn fp-min" onclick="minimizeFloatPanel('quick-invoice-panel')" title="Minimize">─</button>
+                <button class="fp-ctrl-btn fp-close" onclick="closeFloatPanel('quick-invoice-panel')" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="float-panel-body" id="quick-invoice-panel-body">
+            <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:14px; line-height:1.5;">Create a new invoice without leaving your current view.</p>
+            
+            <div style="margin-bottom: 10px;">
+                <label class="fp-label">Customer</label>
+                <select id="fp-customer" class="glass-input custom-select fp-input"></select>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label class="fp-label">Payment</label>
+                <select id="fp-payment" class="glass-input custom-select fp-input">
+                    <option value="cash">Cash</option>
+                    <option value="credit">Credit</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="fp-tax-reg" style="width:16px;height:16px;">
+                <label for="fp-tax-reg" style="font-size:0.82rem; color:var(--text-secondary); cursor:pointer;">Tax Registered (18% VAT)</label>
+            </div>
+
+            <div style="margin-bottom:10px;">
+                <label class="fp-label">Add Item</label>
+                <div class="autocomplete-wrapper" style="width:100%;">
+                    <input type="text" id="fp-item-search" placeholder="Search part..." class="glass-input fp-input" autocomplete="off">
+                    <div id="fp-item-dropdown" class="dropdown-content"></div>
+                </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                <div>
+                    <label class="fp-label">Qty</label>
+                    <input type="number" id="fp-qty" class="glass-input fp-input" placeholder="1" min="1" disabled>
+                </div>
+                <div>
+                    <label class="fp-label">Price</label>
+                    <input type="number" id="fp-price" class="glass-input fp-input" placeholder="0.00" disabled>
+                </div>
+            </div>
+            <button id="fp-add-item-btn" class="fp-action-btn" disabled onclick="fpAddItem()" style="margin-bottom:12px;">+ Add Item</button>
+
+            <div id="fp-items-list" style="margin-bottom:12px; max-height:140px; overflow-y:auto;"></div>
+
+            <div class="fp-summary">
+                <div class="fp-sum-row"><span>Subtotal</span><span id="fp-subtotal">0.00</span></div>
+                <div class="fp-sum-row fp-total-row"><span>TOTAL</span><span id="fp-total">0.00</span></div>
+            </div>
+
+            <button class="fp-action-btn fp-save-btn" onclick="fpSaveInvoice()" style="margin-top:12px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Save & Print Invoice
+            </button>
+        </div>
+    </div>
+
+    <!-- =============================================
+         FLOATING PANEL: CALCULATOR
+    ============================================= -->
+    <div id="calc-panel" class="float-panel glass-panel" style="top:80px; left:30px; width:280px;">
+        <div class="float-panel-header" onmousedown="startDrag(event,'calc-panel')">
+            <div class="float-panel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>
+                Calculator
+            </div>
+            <div class="float-panel-controls">
+                <button class="fp-ctrl-btn fp-min" onclick="minimizeFloatPanel('calc-panel')" title="Minimize">─</button>
+                <button class="fp-ctrl-btn fp-close" onclick="closeFloatPanel('calc-panel')" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="float-panel-body" id="calc-panel-body">
+            <input type="text" id="calc-display" class="calc-display" readonly value="0">
+            <div class="calc-grid">
+                <button class="calc-btn calc-clear" onclick="calcInput('C')">C</button>
+                <button class="calc-btn calc-op" onclick="calcInput('%')">%</button>
+                <button class="calc-btn calc-op" onclick="calcInput('⌫')">⌫</button>
+                <button class="calc-btn calc-op" onclick="calcInput('/')">÷</button>
+                <button class="calc-btn" onclick="calcInput('7')">7</button>
+                <button class="calc-btn" onclick="calcInput('8')">8</button>
+                <button class="calc-btn" onclick="calcInput('9')">9</button>
+                <button class="calc-btn calc-op" onclick="calcInput('*')">×</button>
+                <button class="calc-btn" onclick="calcInput('4')">4</button>
+                <button class="calc-btn" onclick="calcInput('5')">5</button>
+                <button class="calc-btn" onclick="calcInput('6')">6</button>
+                <button class="calc-btn calc-op" onclick="calcInput('-')">−</button>
+                <button class="calc-btn" onclick="calcInput('1')">1</button>
+                <button class="calc-btn" onclick="calcInput('2')">2</button>
+                <button class="calc-btn" onclick="calcInput('3')">3</button>
+                <button class="calc-btn calc-op" onclick="calcInput('+')">+</button>
+                <button class="calc-btn calc-zero" onclick="calcInput('0')">0</button>
+                <button class="calc-btn" onclick="calcInput('.')">.</button>
+                <button class="calc-btn calc-equals" onclick="calcInput('=')">=</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js?v=6"></script>
+    <script>
+    // =============================================
+    //  MULTITASK FLOATING PANEL SYSTEM
+    // =============================================
+
+    // --- Panel open/close/minimize ---
+    function openFloatPanel(id) {
+        const p = document.getElementById(id);
+        if (!p) return;
+        p.style.display = 'flex';
+        p.classList.add('fp-visible');
+        p.classList.remove('fp-minimized');
+        const body = document.getElementById(id + '-body');
+        if (body) body.style.display = '';
+        bringToFront(p);
+        if (id === 'quick-invoice-panel') fpPopulateCustomers();
+    }
+
+    function closeFloatPanel(id) {
+        const p = document.getElementById(id);
+        if (p) { p.classList.remove('fp-visible'); setTimeout(() => p.style.display = 'none', 220); }
+    }
+
+    function minimizeFloatPanel(id) {
+        const p = document.getElementById(id);
+        const body = document.getElementById(id + '-body');
+        if (!p) return;
+        const min = p.classList.toggle('fp-minimized');
+        if (body) body.style.display = min ? 'none' : '';
+    }
+
+    let zTop = 500;
+    function bringToFront(el) { el.style.zIndex = ++zTop; }
+
+    // --- Drag ---
+    let drag = null;
+    function startDrag(e, id) {
+        const p = document.getElementById(id);
+        bringToFront(p);
+        const rect = p.getBoundingClientRect();
+        drag = { el: p, ox: e.clientX - rect.left, oy: e.clientY - rect.top };
+        document.addEventListener('mousemove', doDrag);
+        document.addEventListener('mouseup', stopDrag);
+        e.preventDefault();
+    }
+    function doDrag(e) {
+        if (!drag) return;
+        const nx = e.clientX - drag.ox;
+        const ny = e.clientY - drag.oy;
+        drag.el.style.left = Math.max(0, Math.min(nx, window.innerWidth - 50)) + 'px';
+        drag.el.style.top  = Math.max(0, Math.min(ny, window.innerHeight - 50)) + 'px';
+        drag.el.style.right = 'auto';
+    }
+    function stopDrag() { drag = null; document.removeEventListener('mousemove', doDrag); document.removeEventListener('mouseup', stopDrag); }
+
+    // --- Stock Check Panel ---
+    const fpSearch = document.getElementById('fp-part-search');
+    const fpDropdown = document.getElementById('fp-part-dropdown');
+    if (fpSearch) {
+        fpSearch.addEventListener('input', function() {
+            const q = this.value.trim().toLowerCase();
+            fpDropdown.style.display = 'none';
+            fpDropdown.innerHTML = '';
+            document.getElementById('fp-stock-result').style.display = 'none';
+            document.getElementById('fp-stock-empty').style.display = 'flex';
+            if (q.length < 1) return;
+            const items = JSON.parse(localStorage.getItem('pos_items') || '[]');
+            const matches = items.filter(i => i.name.toLowerCase().includes(q) || (i.partNo||'').toLowerCase().includes(q)).slice(0,8);
+            if (!matches.length) return;
+            matches.forEach(item => {
+                const d = document.createElement('div');
+                d.className = 'dropdown-item';
+                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc" style="color:var(--input-focus);font-weight:700;">Qty: ${item.qty??0}</span>`;
+                d.onclick = () => {
+                    fpSearch.value = `${item.partNo ? item.partNo+' – ' : ''}${item.name}`;
+                    fpDropdown.style.display = 'none';
+                    document.getElementById('fp-stock-qty').textContent = item.qty ?? 0;
+                    document.getElementById('fp-stock-price').textContent = 'LKR ' + parseFloat(item.sellingPrice||0).toLocaleString('en-LK',{minimumFractionDigits:2});
+                    document.getElementById('fp-stock-name').textContent = item.name;
+                    document.getElementById('fp-stock-result').style.display = 'block';
+                    document.getElementById('fp-stock-empty').style.display = 'none';
+                };
+                fpDropdown.appendChild(d);
+            });
+            fpDropdown.style.display = 'block';
+        });
+        document.addEventListener('click', e => { if (!fpSearch.contains(e.target)) fpDropdown.style.display='none'; });
+    }
+
+    // --- Quick Invoice Panel ---
+    let fpItems = [];
+    let fpSelectedItem = null;
+
+    function fpPopulateCustomers() {
+        const sel = document.getElementById('fp-customer');
+        if (!sel) return;
+        const debtors = JSON.parse(localStorage.getItem('pos_debtors') || '[]');
+        sel.innerHTML = '<option value="">Walk-in Customer</option>';
+        debtors.forEach(d => { const o = document.createElement('option'); o.value = d.id||d.name; o.textContent = d.name; sel.appendChild(o); });
+    }
+
+    const fpItemSearch = document.getElementById('fp-item-search');
+    const fpItemDropdown = document.getElementById('fp-item-dropdown');
+    if (fpItemSearch) {
+        fpItemSearch.addEventListener('input', function() {
+            const q = this.value.trim().toLowerCase();
+            fpItemDropdown.style.display = 'none'; fpItemDropdown.innerHTML = '';
+            fpSelectedItem = null;
+            document.getElementById('fp-qty').disabled = true;
+            document.getElementById('fp-price').disabled = true;
+            document.getElementById('fp-add-item-btn').disabled = true;
+            if (q.length < 1) return;
+            const items = JSON.parse(localStorage.getItem('pos_items') || '[]');
+            const matches = items.filter(i => i.name.toLowerCase().includes(q) || (i.partNo||'').toLowerCase().includes(q)).slice(0,8);
+            if (!matches.length) return;
+            matches.forEach(item => {
+                const d = document.createElement('div');
+                d.className = 'dropdown-item';
+                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc">LKR ${parseFloat(item.sellingPrice||0).toFixed(2)}</span>`;
+                d.onclick = () => {
+                    fpSelectedItem = item;
+                    fpItemSearch.value = `${item.partNo ? item.partNo+' – ':'' }${item.name}`;
+                    document.getElementById('fp-price').value = parseFloat(item.sellingPrice||0).toFixed(2);
+                    document.getElementById('fp-qty').value = 1;
+                    document.getElementById('fp-qty').disabled = false;
+                    document.getElementById('fp-price').disabled = false;
+                    document.getElementById('fp-add-item-btn').disabled = false;
+                    fpItemDropdown.style.display = 'none';
+                };
+                fpItemDropdown.appendChild(d);
+            });
+            fpItemDropdown.style.display = 'block';
+        });
+        document.addEventListener('click', e => { if (!fpItemSearch.contains(e.target)) fpItemDropdown.style.display='none'; });
+    }
+
+    function fpAddItem() {
+        if (!fpSelectedItem) return;
+        const qty = parseFloat(document.getElementById('fp-qty').value) || 1;
+        const price = parseFloat(document.getElementById('fp-price').value) || 0;
+        const total = qty * price;
+        fpItems.push({ item: fpSelectedItem, qty, price, total });
+        fpRenderItems();
+        fpItemSearch.value = ''; fpSelectedItem = null;
+        document.getElementById('fp-qty').value = ''; document.getElementById('fp-qty').disabled = true;
+        document.getElementById('fp-price').value = ''; document.getElementById('fp-price').disabled = true;
+        document.getElementById('fp-add-item-btn').disabled = true;
+    }
+
+    function fpRenderItems() {
+        const list = document.getElementById('fp-items-list');
+        let subtotal = 0;
+        list.innerHTML = fpItems.length ? '' : '<div style="font-size:0.78rem;color:var(--text-secondary);text-align:center;padding:8px;">No items added yet</div>';
+        fpItems.forEach((r, i) => {
+            subtotal += r.total;
+            const row = document.createElement('div');
+            row.className = 'fp-item-row';
+            row.innerHTML = `<span class="fp-item-row-name">${r.item.name}</span><span class="fp-item-row-qty">×${r.qty}</span><span class="fp-item-row-total">LKR ${r.total.toFixed(2)}</span><button onclick="fpRemoveItem(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:1rem;padding:0 4px;">✕</button>`;
+            list.appendChild(row);
+        });
+        const taxReg = document.getElementById('fp-tax-reg').checked;
+        const tax = taxReg ? subtotal * 0.18 : 0;
+        document.getElementById('fp-subtotal').textContent = 'LKR ' + subtotal.toFixed(2);
+        document.getElementById('fp-total').textContent = 'LKR ' + (subtotal + tax).toFixed(2);
+    }
+
+    function fpRemoveItem(i) { fpItems.splice(i,1); fpRenderItems(); }
+
+    document.getElementById('fp-tax-reg')?.addEventListener('change', fpRenderItems);
+
+    function fpSaveInvoice() {
+        if (!fpItems.length) { alert('Please add at least one item.'); return; }
+        // Delegate to main script's save logic by populating the main invoice form and triggering save
+        // We open the standard invoice flow with items pre-filled
+        const customerSel = document.getElementById('invoice-customer');
+        const fpCust = document.getElementById('fp-customer');
+        const fpPay = document.getElementById('fp-payment');
+        const fpTax = document.getElementById('fp-tax-reg');
+        if (customerSel) customerSel.value = fpCust ? fpCust.value : '';
+        const payTerms = document.getElementById('invoice-payment-terms');
+        if (payTerms) payTerms.value = fpPay ? fpPay.value : 'cash';
+        const taxCb = document.getElementById('tax-registered-checkbox');
+        if (taxCb) { taxCb.checked = fpTax ? fpTax.checked : false; taxCb.dispatchEvent(new Event('change')); }
+        // Navigate to invoice view
+        document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
+        const invView = document.getElementById('invoice-view');
+        if (invView) { invView.classList.add('active'); if (typeof initNewInvoice === 'function') initNewInvoice(); }
+        // Add items to invoice
+        setTimeout(() => {
+            fpItems.forEach(r => {
+                window._fpPendingItems = window._fpPendingItems || [];
+                window._fpPendingItems.push(r);
+            });
+            if (typeof addFpItemsToInvoice === 'function') addFpItemsToInvoice();
+            else { fpItems.forEach(r => { if (typeof addInvoiceRow === 'function') addInvoiceRow(r.item, r.qty, r.price, 0); }); if(typeof recalcInvoice==='function') recalcInvoice(); }
+        }, 150);
+        closeFloatPanel('quick-invoice-panel');
+        fpItems = []; fpRenderItems();
+    }
+
+    // --- Calculator ---
+    let calcExpr = '';
+    function calcInput(v) {
+        const disp = document.getElementById('calc-display');
+        if (v === 'C') { calcExpr = ''; disp.value = '0'; return; }
+        if (v === '⌫') { calcExpr = calcExpr.slice(0,-1) || ''; disp.value = calcExpr || '0'; return; }
+        if (v === '=') {
+            try {
+                let expr = calcExpr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+                // Handle % 
+                expr = expr.replace(/(\d+\.?\d*)%/g, '($1/100)');
+                const r = Function('"use strict"; return (' + expr + ')')();
+                calcExpr = isFinite(r) ? String(parseFloat(r.toFixed(10))) : 'Error';
+                disp.value = calcExpr;
+            } catch(e) { disp.value = 'Error'; calcExpr = ''; }
+            return;
+        }
+        if (v === '%') { calcExpr += '%'; }
+        else { calcExpr += v; }
+        disp.value = calcExpr;
+    }
+    document.addEventListener('keydown', function(e) {
+        const calcPanel = document.getElementById('calc-panel');
+        if (!calcPanel || calcPanel.style.display === 'none') return;
+        if ('0123456789.+-*/'.includes(e.key)) { e.stopPropagation(); calcInput(e.key); }
+        else if (e.key === 'Enter' || e.key === '=') calcInput('=');
+        else if (e.key === 'Backspace') calcInput('⌫');
+        else if (e.key === 'Escape') closeFloatPanel('calc-panel');
+    });
+    </script>
 </body>
 
 </html>

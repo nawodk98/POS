@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium POS System – Customer User Guide</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* =============================================
+           CORE RESET & VARIABLES
+        ============================================= */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #00C9B1;
+            --primary-light: #00E5CC;
+            --primary-dark: #009B87;
+            --accent-green: #10B981;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+            --accent-blue: #38BDF8;
+            --text-dark: #E2F0FF;
+            --text-mid: #B8D4EE;
+            --text-muted: #7FA8C9;
+            --text-light: #4E7A9B;
+            --border: rgba(0,201,177,0.18);
+            --bg-light: rgba(0,20,40,0.55);
+            --bg-white: rgba(0,30,55,0.65);
+            --glass-bg: rgba(5,25,50,0.6);
+            --glass-border: rgba(0,201,177,0.22);
+            --shadow-sm: 0 2px 8px rgba(0,201,177,0.1);
+            --shadow-md: 0 8px 24px rgba(0,201,177,0.15);
+            --shadow-lg: 0 20px 48px rgba(0,201,177,0.2);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+        }
+
+        /* =============================================
+           PAGE LAYOUT – PRINT-READY A4
+        ============================================= */
+        html { font-size: 10.5pt; }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            background: #020d1a url('C:\\Users\\nawod\\.gemini\\antigravity\\brain\\672e0414-6b64-43fa-8fde-921878309276\\pos_guide_bg_1777136830150.png') center/cover fixed;
+            line-height: 1.7;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 20px;
+            padding: 18mm 18mm 20mm;
+            background: var(--glass-bg);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,201,177,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--primary-light), transparent);
+            opacity: 0.7;
+        }
+
+        /* =============================================
+           COVER PAGE
+        ============================================= */
+        .cover-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 297mm;
+            padding: 30mm 20mm;
+            background: linear-gradient(160deg, rgba(0,10,25,0.92) 0%, rgba(0,30,50,0.88) 50%, rgba(0,20,40,0.92) 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+
+        .cover-page::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            left: -80px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(108,71,255,0.3) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-page::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: -60px;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .cover-logo-ring {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(108,71,255,0.4), rgba(56,189,248,0.3));
+            border: 2px solid rgba(108,71,255,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 36px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 0 0 40px rgba(108,71,255,0.4);
+        }
+
+        .cover-logo-ring svg { opacity: 0.9; }
+
+        .cover-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 16px;
+            border-radius: 50px;
+            background: rgba(108,71,255,0.25);
+            border: 1px solid rgba(108,71,255,0.4);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #a78bfa;
+            margin-bottom: 22px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            background: linear-gradient(135deg, #FFFFFF 0%, #C4B5FD 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cover-subtitle {
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.65);
+            max-width: 360px;
+            margin: 0 auto 44px;
+            position: relative;
+            z-index: 1;
+            line-height: 1.6;
+        }
+
+        .cover-divider {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, #6C47FF, #38BDF8);
+            border-radius: 2px;
+            margin: 0 auto 44px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            max-width: 400px;
+            margin: 0 auto 48px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .cover-feature-item .fi-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #6C47FF;
+            flex-shrink: 0;
+        }
+
+        .cover-feature-item .fi-dot.green { background: #10B981; }
+        .cover-feature-item .fi-dot.blue { background: #38BDF8; }
+        .cover-feature-item .fi-dot.amber { background: #F59E0B; }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 24mm;
+            left: 0; right: 0;
+            text-align: center;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.35);
+            z-index: 1;
+        }
+
+        .cover-version-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 50px;
+            background: rgba(16,185,129,0.2);
+            border: 1px solid rgba(16,185,129,0.3);
+            color: #6EE7B7;
+            font-size: 0.72rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* =============================================
+           TOC PAGE
+        ============================================= */
+        .toc-section { margin-bottom: 28px; }
+
+        .toc-chapter {
+            margin-bottom: 6px;
+        }
+
+        .toc-chapter-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 18px;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+            background: linear-gradient(90deg, rgba(0,201,177,0.08) 0%, transparent 100%);
+            font-weight: 600;
+            font-size: 0.92rem;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .toc-chapter-link .pg { color: var(--text-muted); font-size: 0.82rem; font-weight: 400; }
+
+        .toc-sub-items { padding: 4px 0 6px 36px; }
+
+        .toc-sub-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 16px 5px 0;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .toc-sub-link:last-child { border-bottom: none; }
+        .toc-sub-link .pg { font-size: 0.78rem; }
+
+        /* =============================================
+           PAGE HEADERS
+        ============================================= */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 30px;
+            background: rgba(0,201,177,0.04);
+            padding: 10px 14px 14px;
+            border-radius: var(--radius-sm);
+            margin: -4px -4px 24px;
+        }
+
+        .page-header-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+
+        .page-header-logo svg { flex-shrink: 0; }
+
+        .page-header-right {
+            font-size: 0.72rem;
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        /* =============================================
+           SECTION TITLES
+        ============================================= */
+        .chapter-heading {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .chapter-num {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(108,71,255,0.3);
+        }
+
+        .chapter-num.green { background: linear-gradient(135deg, #059669, #10B981); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+        .chapter-num.blue { background: linear-gradient(135deg, #0284C7, #38BDF8); box-shadow: 0 4px 12px rgba(56,189,248,0.3); }
+        .chapter-num.amber { background: linear-gradient(135deg, #D97706, #F59E0B); box-shadow: 0 4px 12px rgba(245,158,11,0.3); }
+        .chapter-num.red { background: linear-gradient(135deg, #B91C1C, #EF4444); box-shadow: 0 4px 12px rgba(239,68,68,0.3); }
+
+        .chapter-desc {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+            padding-left: 58px;
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 28px 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 22px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, var(--primary), var(--primary-light));
+            flex-shrink: 0;
+        }
+
+        .section-title.green::before { background: linear-gradient(180deg, #059669, #10B981); }
+        .section-title.amber::before { background: linear-gradient(180deg, #D97706, #F59E0B); }
+
+        /* =============================================
+           CONTENT ELEMENTS
+        ============================================= */
+        p { margin-bottom: 12px; font-size: 0.89rem; color: var(--text-mid); }
+
+        .screenshot-frame {
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,201,177,0.1);
+            background: rgba(0,10,25,0.5);
+        }
+
+        .screenshot-frame img {
+            width: 100%;
+            display: block;
+        }
+
+        .screenshot-caption {
+            background: rgba(0,201,177,0.06);
+            padding: 10px 18px;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .screenshot-caption::before {
+            content: '📷';
+            font-size: 0.82rem;
+        }
+
+        /* Step callouts */
+        .steps { margin: 16px 0; }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .step-num {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(108,71,255,0.25);
+        }
+
+        .step-num.green { background: linear-gradient(135deg, #059669, #10B981); box-shadow: 0 3px 10px rgba(16,185,129,0.25); }
+
+        .step-body { flex: 1; }
+        .step-body strong { font-size: 0.91rem; color: var(--text-dark); font-weight: 600; display: block; margin-bottom: 3px; }
+        .step-body p { margin: 0; font-size: 0.84rem; }
+
+        /* Info/warning/tip boxes */
+        .callout {
+            border-radius: var(--radius-md);
+            padding: 16px 20px;
+            margin: 18px 0;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .callout.info { background: rgba(56,189,248,0.07); border: 1px solid rgba(56,189,248,0.2); }
+        .callout.success { background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2); }
+        .callout.warning { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); }
+        .callout.danger { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.2); }
+        .callout.tip { background: rgba(0,201,177,0.07); border: 1px solid rgba(0,201,177,0.18); }
+
+        .callout-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+        .callout-body {}
+        .callout-body strong { font-size: 0.88rem; font-weight: 700; display: block; margin-bottom: 4px; }
+        .callout-body p { font-size: 0.82rem; margin: 0; }
+
+        .callout.info .callout-body strong { color: #0284C7; }
+        .callout.success .callout-body strong { color: #059669; }
+        .callout.warning .callout-body strong { color: #D97706; }
+        .callout.danger .callout-body strong { color: #B91C1C; }
+        .callout.tip .callout-body strong { color: var(--primary); }
+
+        /* Feature grid */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin: 18px 0;
+        }
+
+        .feature-card {
+            background: rgba(0,25,50,0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary), var(--primary-light));
+        }
+
+        .feature-card.green::before { background: linear-gradient(180deg, #059669, #10B981); }
+        .feature-card.blue::before { background: linear-gradient(180deg, #0284C7, #38BDF8); }
+        .feature-card.amber::before { background: linear-gradient(180deg, #D97706, #F59E0B); }
+        .feature-card.red::before { background: linear-gradient(180deg, #B91C1C, #EF4444); }
+
+        .feature-card-icon { font-size: 1.5rem; margin-bottom: 10px; }
+
+        .feature-card h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .feature-card p { font-size: 0.79rem; color: var(--text-muted); margin: 0; }
+
+        /* Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.83rem;
+        }
+
+        .data-table th {
+            background: linear-gradient(90deg, rgba(0,201,177,0.12), rgba(0,201,177,0.04));
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.79rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--primary);
+            border-bottom: 2px solid rgba(0,201,177,0.2);
+        }
+
+        .data-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(0,201,177,0.1);
+            color: var(--text-mid);
+            vertical-align: top;
+        }
+
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:nth-child(even) td { background: rgba(0,201,177,0.04); }
+
+        /* Badge/pill */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 50px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge.purple { background: rgba(0,201,177,0.12); color: var(--primary); border: 1px solid rgba(0,201,177,0.25); }
+        .badge.green { background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(16,185,129,0.2); }
+        .badge.amber { background: rgba(245,158,11,0.12); color: #FCD34D; border: 1px solid rgba(245,158,11,0.2); }
+        .badge.red { background: rgba(239,68,68,0.12); color: #FCA5A5; border: 1px solid rgba(239,68,68,0.2); }
+        .badge.blue { background: rgba(56,189,248,0.12); color: #7DD3FC; border: 1px solid rgba(56,189,248,0.2); }
+
+        /* Keyboard shortcut */
+        .kbd {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            border: 1px solid var(--glass-border);
+            background: rgba(0,201,177,0.08);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: monospace;
+            box-shadow: 0 2px 0 rgba(0,201,177,0.15);
+        }
+
+        /* Flow diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 18px 0;
+        }
+
+        .flow-box {
+            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, rgba(0,201,177,0.12), rgba(0,201,177,0.05));
+            border: 1px solid rgba(0,201,177,0.25);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .flow-box.green { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05)); border-color: rgba(16,185,129,0.25); color: #059669; }
+        .flow-box.amber { background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(245,158,11,0.05)); border-color: rgba(245,158,11,0.25); color: #B45309; }
+
+        .flow-arrow { font-size: 1.1rem; color: var(--text-light); }
+
+        /* Page number strip */
+        .page-footer {
+            position: absolute;
+            bottom: 14mm;
+            left: 18mm; right: 18mm;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--glass-border);
+            padding-top: 8px;
+        }
+
+        /* Divider */
+        .hr {
+            height: 1px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            margin: 24px 0;
+            border: none;
+            opacity: 0.3;
+        }
+
+        /* Page title label */
+        .page-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .page-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .page-title-desc {
+            font-size: 0.86rem;
+            color: var(--text-muted);
+            margin-bottom: 28px;
+        }
+
+        /* Highlight inline element */
+        .hl { background: rgba(0,201,177,0.12); color: var(--primary); padding: 1px 6px; border-radius: 4px; font-size: 0.85em; font-weight: 600; border: 1px solid rgba(0,201,177,0.2); }
+        .hl.green { background: rgba(16,185,129,0.12); color: #34D399; border-color: rgba(16,185,129,0.2); }
+        .hl.amber { background: rgba(245,158,11,0.12); color: #FCD34D; border-color: rgba(245,158,11,0.2); }
+
+        ul.styled, ol.styled {
+            padding-left: 24px;
+            margin: 10px 0 16px;
+        }
+
+        ul.styled li, ol.styled li {
+            font-size: 0.86rem;
+            color: var(--text-mid);
+            margin-bottom: 6px;
+            padding-left: 6px;
+        }
+
+        ul.styled li::marker { color: var(--primary); }
+
+        /* =============================================
+           PRINT STYLES
+        ============================================= */
+        @media print {
+            body { background: #020d1a !important; }
+            .page {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 18mm 18mm 22mm;
+                page-break-after: always;
+                backdrop-filter: none !important;
+                -webkit-backdrop-filter: none !important;
+                background: rgba(3,15,32,0.97) !important;
+            }
+            .cover-page { min-height: 297mm; }
+            .pdf-fab { display: none !important; }
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        /* =============================================
+           FLOATING PDF BUTTON
+        ============================================= */
+        .pdf-fab {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pdf-fab-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 50px;
+            border: 1px solid rgba(0,201,177,0.3);
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #fff;
+            background: linear-gradient(135deg, #009B87 0%, #00C9B1 50%, #38BDF8 100%);
+            box-shadow: 0 8px 28px rgba(0,201,177,0.4);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            white-space: nowrap;
+        }
+
+        .pdf-fab-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 14px 36px rgba(108,71,255,0.55);
+        }
+
+        .pdf-fab-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .pdf-fab-btn svg { flex-shrink: 0; }
+
+        .pdf-fab-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(108,71,255,0.75);
+            letter-spacing: 0.06em;
+            text-align: center;
+        }
+
+        /* Progress bar */
+        .pdf-progress-wrap {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10,10,30,0.65);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .pdf-progress-wrap.active { display: flex; }
+
+        .pdf-progress-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 36px 40px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+            max-width: 340px;
+            width: 90%;
+        }
+
+        .pdf-progress-icon {
+            font-size: 2.5rem;
+            margin-bottom: 14px;
+            animation: pulse-icon 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-icon {
+            from { transform: scale(1); opacity: 0.8; }
+            to   { transform: scale(1.12); opacity: 1; }
+        }
+
+        .pdf-progress-title {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #0F0F1A;
+            margin-bottom: 6px;
+        }
+
+        .pdf-progress-sub {
+            font-size: 0.8rem;
+            color: #5A5A72;
+            margin-bottom: 20px;
+        }
+
+        .pdf-progress-bar-track {
+            width: 100%;
+            height: 6px;
+            background: #E2E8F0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .pdf-progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #6C47FF, #38BDF8);
+            border-radius: 3px;
+            transition: width 0.4s ease;
+        }
+
+        /* =============================================
+           QUICK REFERENCE CARD
+        ============================================= */
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(0,25,50,0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .shortcut-action { flex: 1; color: var(--text-muted); }
+
+        /* System overview diagram */
+        .sys-overview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 18px 0;
+        }
+
+        .sys-module {
+            padding: 16px;
+            border-radius: var(--radius-md);
+            background: rgba(0,25,50,0.5);
+            border: 1px solid var(--glass-border);
+            text-align: center;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .sys-module:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,201,177,0.15);
+        }
+
+        .sys-module-icon { font-size: 1.8rem; margin-bottom: 8px; }
+
+        .sys-module h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.86rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+
+        .sys-module p { font-size: 0.76rem; margin: 0; color: var(--text-muted); }
+
+        /* Two column layout */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+        .two-col-3-2 { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: start; }
+    </style>
+</head>
+<body>
+
+<!-- ================================================
+     COVER PAGE
+================================================ -->
+<div class="page cover-page">
+    <div class="cover-logo-ring">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+            <path d="M2 17l10 5 10-5"></path>
+            <path d="M2 12l10 5 10-5"></path>
+        </svg>
+    </div>
+
+    <div class="cover-badge">
+        <span>●</span> Official Documentation
+    </div>
+
+    <h1 class="cover-title">Premium POS System<br>User Guide</h1>
+
+    <p class="cover-subtitle">
+        A complete step-by-step guide explaining how to use every feature of the Point of Sale system — from first login to advanced reporting.
+    </p>
+
+    <div class="cover-divider"></div>
+
+    <div class="cover-features">
+        <div class="cover-feature-item">
+            <div class="fi-dot"></div>
+            Point of Sale & Invoicing
+        </div>
+        <div class="cover-feature-item">
+            <div class="fi-dot green"></div>
+            Inventory Management
+        </div>
+        <div class="cover-feature-item">
+            <div class="fi-dot blue"></div>
+            Financial Reports
+        </div>
+        <div class="cover-feature-item">
+            <div class="fi-dot amber"></div>
+            Backup & Restore
+        </div>
+        <div class="cover-feature-item">
+            <div class="fi-dot"></div>
+            Accounts Payable
+        </div>
+        <div class="cover-feature-item">
+            <div class="fi-dot green"></div>
+            Accounts Receivable
+        </div>
+    </div>
+
+    <div class="cover-version-tag">Version 2026 · For Customer Use</div>
+
+    <div class="cover-footer">
+        Premium POS System · All rights reserved · Confidential Customer Documentation
+    </div>
+</div>
+
+
+<!-- ================================================
+     TABLE OF CONTENTS PAGE
+================================================ -->
+<div class="page" style="padding-top: 22mm;">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Customer User Guide<br>2026 Edition</div>
+    </div>
+
+    <div class="page-label">Navigation</div>
+    <h2 class="page-title" style="font-size: 1.7rem;">Table of Contents</h2>
+    <p class="page-title-desc">Use this guide to quickly jump to any section of the documentation.</p>
+
+    <div class="toc-section">
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>1 · System Overview</span>
+                <span class="pg">Page 3</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>What is the POS System?</span><span class="pg">3</span></div>
+            <div class="toc-sub-link"><span>Key Features at a Glance</span><span class="pg">3</span></div>
+            <div class="toc-sub-link"><span>How to Launch the System</span><span class="pg">3</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>2 · Logging In</span>
+                <span class="pg">Page 4</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>The Login Screen</span><span class="pg">4</span></div>
+            <div class="toc-sub-link"><span>Default Credentials</span><span class="pg">4</span></div>
+            <div class="toc-sub-link"><span>Navigating the Dashboard</span><span class="pg">4</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>3 · Creating Invoices (Point of Sale)</span>
+                <span class="pg">Page 5</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>Opening a New Invoice</span><span class="pg">5</span></div>
+            <div class="toc-sub-link"><span>Selecting a Customer & Payment Terms</span><span class="pg">5</span></div>
+            <div class="toc-sub-link"><span>Adding Items to the Invoice</span><span class="pg">5</span></div>
+            <div class="toc-sub-link"><span>Applying Discounts & Tax</span><span class="pg">6</span></div>
+            <div class="toc-sub-link"><span>Saving & Printing the Invoice</span><span class="pg">6</span></div>
+            <div class="toc-sub-link"><span>Invoice History & Sales Returns</span><span class="pg">6</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>4 · Inventory Management</span>
+                <span class="pg">Page 7</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>Receiving Stock (Goods Received Note)</span><span class="pg">7</span></div>
+            <div class="toc-sub-link"><span>GRN History</span><span class="pg">7</span></div>
+            <div class="toc-sub-link"><span>Purchase Returns</span><span class="pg">8</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>5 · Reports</span>
+                <span class="pg">Page 8</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>Types of Reports Available</span><span class="pg">8</span></div>
+            <div class="toc-sub-link"><span>Generating and Printing Reports</span><span class="pg">8</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>6 · Settings & Data Management</span>
+                <span class="pg">Page 9</span>
+            </div>
+        </div>
+        <div class="toc-sub-items">
+            <div class="toc-sub-link"><span>Managing Debtors & Creditors</span><span class="pg">9</span></div>
+            <div class="toc-sub-link"><span>Managing Items & Users</span><span class="pg">9</span></div>
+            <div class="toc-sub-link"><span>Backup & Restore Your Data</span><span class="pg">10</span></div>
+        </div>
+
+        <div class="toc-chapter">
+            <div class="toc-chapter-link">
+                <span>7 · Quick Reference Card</span>
+                <span class="pg">Page 11</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Table of Contents · Page 2</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 3 – CHAPTER 1: SYSTEM OVERVIEW
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 1 · System Overview</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num">1</div>
+        System Overview
+    </div>
+    <p class="chapter-desc">Understand what the POS system is, what it can do, and how to launch it on your computer.</p>
+
+    <div class="section-title">What is the POS System?</div>
+    <p>The <strong>Premium POS System</strong> is a powerful, all-in-one Point of Sale and business management application designed specifically for shops. It runs entirely in your web browser — no internet connection, no complicated installation, and no ongoing subscription fees. Everything you need to run your business is in one single file on your computer.</p>
+
+    <p>The system stores all data securely in your browser's local storage, meaning your inventory, invoices, and customer records are always available, even without the internet.</p>
+
+    <div class="section-title">Key Features at a Glance</div>
+    <div class="sys-overview">
+        <div class="sys-module">
+            <div class="sys-module-icon">🧾</div>
+            <h4>Point of Sale</h4>
+            <p>Create, save & print tax invoices in seconds</p>
+        </div>
+        <div class="sys-module">
+            <div class="sys-module-icon">📦</div>
+            <h4>Inventory</h4>
+            <p>Manage stock with Goods Received Notes and purchase returns</p>
+        </div>
+        <div class="sys-module">
+            <div class="sys-module-icon">📊</div>
+            <h4>Reports</h4>
+            <p>12+ business reports including Profit & Loss, Tax Liability, and more</p>
+        </div>
+        <div class="sys-module">
+            <div class="sys-module-icon">🏦</div>
+            <h4>Accounts Payable</h4>
+            <p>Track what you owe to suppliers with credit management</p>
+        </div>
+        <div class="sys-module">
+            <div class="sys-module-icon">💳</div>
+            <h4>Accounts Receivable</h4>
+            <p>Track customer credit balances and outstanding payments</p>
+        </div>
+        <div class="sys-module">
+            <div class="sys-module-icon">🔒</div>
+            <h4>User Security</h4>
+            <p>Multi-user access with role-based permissions</p>
+        </div>
+    </div>
+
+    <div class="section-title">How to Launch the System</div>
+    <p>There are two simple ways to start the POS system on a Windows computer:</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">A</div>
+            <div class="step-body">
+                <strong>Quick Method (Recommended): Double-click <span class="hl">run.bat</span></strong>
+                <p>Locate the <span class="hl">run.bat</span> file in your POS folder and double-click it. The system will instantly open in your default browser. This is the fastest way to get started.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">B</div>
+            <div class="step-body">
+                <strong>Manual Method: Open <span class="hl">index.html</span> in a browser</strong>
+                <p>Open the <span class="hl">index.html</span> file directly in Google Chrome, Microsoft Edge, Firefox, or Safari. You can drag-and-drop the file into a browser window.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout info">
+        <div class="callout-icon">💡</div>
+        <div class="callout-body">
+            <strong>Best Browser Recommendation</strong>
+            <p>For the best experience, use <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>. These browsers offer the most reliable local storage and printing support.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 1 · Page 3</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 4 – CHAPTER 2: LOGGING IN & DASHBOARD
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 2 · Logging In</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num blue">2</div>
+        Logging In & the Dashboard
+    </div>
+    <p class="chapter-desc">How to sign into the system and navigate the main dashboard.</p>
+
+    <div class="section-title">The Login Screen</div>
+    <p>When you open the POS system, you will see the <strong>Login Screen</strong> first. This is a secure entry point that requires your username and password before you can access any business data.</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_login_screen_1777134470179.png" alt="POS Login Screen" style="max-height: 220px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 2.1 — The POS System Login Screen with glassmorphism design</div>
+    </div>
+
+    <div class="section-title">Default Login Credentials</div>
+    <table class="data-table">
+        <thead>
+            <tr><th>Field</th><th>Default Value</th><th>Note</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><strong>Username</strong></td><td><span class="hl">admin</span></td><td>Can be changed in Settings → Users</td></tr>
+            <tr><td><strong>Password</strong></td><td><span class="hl">admin</span></td><td>Should be changed after first login</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout warning">
+        <div class="callout-icon">⚠️</div>
+        <div class="callout-body">
+            <strong>Security Reminder</strong>
+            <p>Change the default password as soon as possible. Go to <strong>Settings → Users</strong> to update credentials and add new staff accounts with appropriate permission levels.</p>
+        </div>
+    </div>
+
+    <div class="section-title">Navigating the Dashboard</div>
+    <p>After logging in, you arrive at the <strong>Dashboard</strong> — the control centre of your POS system. The screen is divided into two main areas:</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_dashboard_1777134485238.png" alt="POS Dashboard" style="max-height: 210px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 2.2 — The main Dashboard showing the Quick Stock Check and Quick Action buttons</div>
+    </div>
+
+    <div class="two-col" style="margin-top: 14px;">
+        <div>
+            <strong style="font-size: 0.88rem; color: var(--text-dark);">📌 Left Sidebar — Navigation</strong>
+            <ul class="styled" style="margin-top: 6px;">
+                <li><strong>Dashboard</strong> — Home screen</li>
+                <li><strong>Point of Sale</strong> — Invoicing module</li>
+                <li><strong>Inventory</strong> — Stock management</li>
+                <li><strong>Reports</strong> — Business analytics</li>
+                <li><strong>Settings</strong> — System configuration</li>
+            </ul>
+        </div>
+        <div>
+            <strong style="font-size: 0.88rem; color: var(--text-dark);">⚡ Main Area — Quick Actions</strong>
+            <ul class="styled" style="margin-top: 6px;">
+                <li><strong>Quick Stock Check</strong> — Search any item instantly</li>
+                <li><strong>New Invoice</strong> — Start a sale</li>
+                <li><strong>Backup & Restore</strong> — Protect your data</li>
+                <li><strong>Daily Summary</strong> — Today's overview</li>
+                <li><strong>Settings</strong> — System preferences</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="callout tip">
+        <div class="callout-icon">⚡</div>
+        <div class="callout-body">
+            <strong>Quick Stock Check</strong>
+            <p>On the dashboard, you can instantly check any item's <strong>availability (stock quantity)</strong> and <strong>selling price</strong> by typing the part number or name in the search bar — without opening any module.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 2 · Page 4</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 5 – CHAPTER 3: CREATING INVOICES (Part 1)
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 3 · Point of Sale</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num amber">3</div>
+        Creating Invoices (Point of Sale)
+    </div>
+    <p class="chapter-desc">Learn how to create and print a sales invoice step by step.</p>
+
+    <div class="section-title">Opening a New Invoice</div>
+    <p>There are two ways to start a new invoice:</p>
+    <ul class="styled">
+        <li>Click the <strong>New Invoice</strong> quick action button on the Dashboard</li>
+        <li>Click <strong>Point of Sale</strong> in the left sidebar, then click <strong>New Invoice</strong></li>
+    </ul>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_invoice_form_1777134515260.png" alt="Invoice Form" style="max-height: 215px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 3.1 — The New Invoice form. A unique invoice number is automatically assigned.</div>
+    </div>
+
+    <p>The system automatically assigns a sequential invoice number in the format <span class="hl">INV-YYYYMMDD-001</span> and sets today's date. You do not need to fill these in manually.</p>
+
+    <div class="section-title">Step-by-Step: Creating an Invoice</div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <strong>Select the Customer</strong>
+                <p>Use the <strong>Customer Name</strong> dropdown to choose a registered customer, or leave it as <span class="hl">Walk-in Customer</span> for a cash sale with no customer record required.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <strong>Choose Payment Terms</strong>
+                <p>Select <span class="hl green">Cash</span> for immediate payment or <span class="hl amber">Credit</span> if the customer will pay later. Credit sales are automatically tracked in Accounts Receivable.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <strong>Tax Registered (Optional)</strong>
+                <p>If the customer is a VAT-registered business, tick the <strong>Tax Registered</strong> checkbox. This will automatically add 18% VAT to the invoice total and format it as a proper Tax Invoice.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+                <strong>Search and Add Items</strong>
+                <p>Click the part search field and type the <strong>part number</strong> or <strong>part name</strong>. A dropdown will appear with matching items. Click on an item to select it. Then enter the <strong>Qty</strong> (quantity), verify the <strong>Price</strong>, and enter any item-level <strong>Discount</strong>. Press <kbd class="kbd">Enter</kbd> or click <strong>Add (Enter)</strong> to add it to the invoice.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+                <strong>Repeat for More Items</strong>
+                <p>The item is added to the invoice table. Repeat Step 4 to add more items. You can remove any item by clicking the delete button (✕) next to it in the table.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 3 · Page 5</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 6 – CHAPTER 3 CONTINUED
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 3 · Point of Sale (continued)</div>
+    </div>
+
+    <div class="section-title amber">Applying Discounts & Tax</div>
+    <p>The invoice summary panel in the bottom-right automatically calculates all totals:</p>
+
+    <table class="data-table">
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Subtotal</strong></td><td>Sum of all items (after per-item discounts)</td></tr>
+            <tr><td><strong>Bill Discount</strong></td><td>An additional discount applied to the entire bill. Enter a value in this field.</td></tr>
+            <tr><td><strong>Tax (18%)</strong></td><td>Automatically shown only when the <em>Tax Registered</em> checkbox is ticked. Calculated on subtotal minus bill discount.</td></tr>
+            <tr><td><strong>Total</strong></td><td>The final amount payable by the customer.</td></tr>
+        </tbody>
+    </table>
+
+    <div class="flow-diagram">
+        <div class="flow-box">Item Prices</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">Subtotal</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box amber">– Bill Discount</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box green">+ Tax (18%)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box" style="background: linear-gradient(135deg,rgba(108,71,255,0.2),rgba(108,71,255,0.1)); border-color: var(--primary); font-weight:800;">TOTAL</div>
+    </div>
+
+    <div class="section-title amber">Saving & Printing the Invoice</div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-body">
+                <strong>Click "Save & Print Invoice"</strong>
+                <p>Once all items are added and totals are correct, click the <strong>Save & Print Invoice</strong> button at the bottom. The invoice is permanently saved to your records AND your browser's print dialog opens automatically.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">7</div>
+            <div class="step-body">
+                <strong>Print or Save as PDF</strong>
+                <p>In the print dialog, choose your printer to print a paper copy, or select <strong>Save as PDF</strong> to create a digital copy. The invoice is formatted for A4 paper with your business name and all required tax details.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout success">
+        <div class="callout-icon">✅</div>
+        <div class="callout-body">
+            <strong>Invoice Saved Automatically</strong>
+            <p>The invoice is saved the moment you click "Save & Print Invoice" – even if you cancel printing. All saved invoices appear in <strong>Point of Sale → Invoice History</strong>.</p>
+        </div>
+    </div>
+
+    <div class="section-title amber">Invoice History & Sales Returns</div>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_invoice_history_1777134644443.png" alt="Invoice History" style="max-height: 185px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 3.2 — Invoice History showing all past sales, payment status, and action buttons</div>
+    </div>
+
+    <div class="two-col" style="margin-top: 14px;">
+        <div>
+            <strong style="font-size: 0.88rem;">📋 Invoice History</strong>
+            <p style="font-size: 0.82rem; margin-top: 6px;">Go to <strong>Point of Sale → Invoice History</strong> to see every invoice ever created. You can click any invoice to view its full details, reprint it, or record a payment for credit invoices.</p>
+        </div>
+        <div>
+            <strong style="font-size: 0.88rem;">🔄 Sales Returns</strong>
+            <p style="font-size: 0.82rem; margin-top: 6px;">If a customer returns goods, go to <strong>Point of Sale → Sales Returns</strong>. Select the original invoice and mark which items are being returned. Stock levels are automatically adjusted.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 3 · Page 6</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 7 – CHAPTER 4: INVENTORY
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 4 · Inventory Management</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num green">4</div>
+        Inventory Management
+    </div>
+    <p class="chapter-desc">Manage your stock levels by recording goods received from suppliers and processing purchase returns.</p>
+
+    <div class="section-title green">Receiving Stock (Goods Received Note – GRN)</div>
+    <p>Every time you receive goods from a supplier, you must create a <strong>Goods Received Note (GRN)</strong>. This increases your stock levels and records what you owe to the supplier.</p>
+    <p>Navigate to <strong>Inventory → Stock In/Out</strong> to open the GRN form.</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_grn_form_1777134533485.png" alt="GRN Form" style="max-height: 215px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 4.1 — The Goods Received Note (GRN) form for recording incoming stock from suppliers</div>
+    </div>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num green">1</div>
+            <div class="step-body">
+                <strong>Select the Supplier</strong>
+                <p>Choose the supplier from the <strong>Supplier</strong> dropdown. Suppliers must be pre-registered under Settings → Creditors.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num green">2</div>
+            <div class="step-body">
+                <strong>Enter Supplier Invoice Reference</strong>
+                <p>Type the supplier's own invoice number in the <strong>Supplier Invoice / Ref No.</strong> field (e.g., <span class="hl">GS-9022</span>). This is used for cross-referencing.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num green">3</div>
+            <div class="step-body">
+                <strong>Set Payment Terms</strong>
+                <p>Select <span class="hl amber">Credit</span> if you will pay the supplier later (creates an Accounts Payable record), or <span class="hl green">Cash</span> if paid immediately.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num green">4</div>
+            <div class="step-body">
+                <strong>Add Items Received</strong>
+                <p>Search for each received item by part number or name. Enter the <strong>Qty</strong> received, the <strong>Unit Cost</strong> paid, and any supplier <strong>Discount</strong>. Click <strong>Add (Enter)</strong> to add each item to the GRN table.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num green">5</div>
+            <div class="step-body">
+                <strong>Enter Bill Discount (if any) and Save</strong>
+                <p>If the supplier gave an overall discount on the bill, enter it in <strong>Bill Discount</strong>. Then click <strong>Save & Receive Stock</strong>. Stock quantities are immediately updated across the entire system and the selling price is updated if the cost changed.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout info">
+        <div class="callout-icon">📦</div>
+        <div class="callout-body">
+            <strong>GRN History</strong>
+            <p>All saved GRNs are listed under <strong>Inventory → GRN History</strong>. Click any GRN to view its items, payment status, and to record supplier payments.</p>
+        </div>
+    </div>
+
+    <div class="section-title green" style="margin-top: 20px;">Purchase Returns</div>
+    <p>If you need to return goods to a supplier (e.g., damaged items), go to <strong>Inventory → Purchase Returns</strong>. Select the original GRN and mark the items being returned. Stock levels and supplier balances are automatically recalculated.</p>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 4 · Page 7</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 8 – CHAPTER 5: REPORTS
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 5 · Reports</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num blue">5</div>
+        Reports
+    </div>
+    <p class="chapter-desc">Access powerful financial and operational reports to make informed business decisions.</p>
+
+    <div class="section-title">Types of Reports Available</div>
+    <p>Click <strong>Reports</strong> in the left sidebar to expand the reports menu. The system offers <strong>12 different reports</strong> across different business areas:</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_reports_view_1777134563173.png" alt="Reports View" style="max-height: 190px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 5.1 — The Periodic Sales Report with date filter controls and printable data table</div>
+    </div>
+
+    <table class="data-table" style="margin-top: 14px;">
+        <thead><tr><th>Report Name</th><th>What It Shows</th><th>Category</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Periodic Sales Report</strong></td><td>All sales invoices within a date range</td><td><span class="badge purple">Sales</span></td></tr>
+            <tr><td><strong>Output Tax (Sales Tax)</strong></td><td>VAT collected from customers in a period</td><td><span class="badge amber">Tax</span></td></tr>
+            <tr><td><strong>Input Tax (Purchase Tax)</strong></td><td>VAT paid to suppliers in a period</td><td><span class="badge amber">Tax</span></td></tr>
+            <tr><td><strong>Accounts Payable by Supplier</strong></td><td>What you owe to each specific supplier</td><td><span class="badge red">A/P</span></td></tr>
+            <tr><td><strong>Accounts Receivable by Customer</strong></td><td>What each specific customer owes you</td><td><span class="badge green">A/R</span></td></tr>
+            <tr><td><strong>Accounts Payable Summary</strong></td><td>Total outstanding owed to all suppliers</td><td><span class="badge red">A/P</span></td></tr>
+            <tr><td><strong>Accounts Receivable Summary</strong></td><td>Total outstanding owed by all customers</td><td><span class="badge green">A/R</span></td></tr>
+            <tr><td><strong>Inventory Summary</strong></td><td>Current stock levels and values for all items</td><td><span class="badge blue">Stock</span></td></tr>
+            <tr><td><strong>Item Ledger / Stock Check</strong></td><td>Full movement history (in/out) for a single item</td><td><span class="badge blue">Stock</span></td></tr>
+            <tr><td><strong>Profit & Loss</strong></td><td>Revenue, cost of goods sold, and net profit</td><td><span class="badge purple">Finance</span></td></tr>
+            <tr><td><strong>Pending Debit Summary</strong></td><td>All unpaid credit invoices (customer debts)</td><td><span class="badge green">A/R</span></td></tr>
+            <tr><td><strong>Overall Payment Summary</strong></td><td>All payment transactions recorded in the period</td><td><span class="badge purple">Finance</span></td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-title">Generating and Printing a Report</div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <strong>Click the report name</strong> in the left sidebar under "Reports"</div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <strong>Set the date range</strong> using the From and To date pickers at the top of the report, then click <strong>Filter</strong></div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <strong>Click "Print"</strong> at the top right to print the report or save it as a PDF</div>
+        </div>
+    </div>
+
+    <div class="callout tip">
+        <div class="callout-icon">📊</div>
+        <div class="callout-body">
+            <strong>Item Ledger Tip</strong>
+            <p>When viewing the <strong>Item Ledger / Stock Check</strong> report, an extra field appears to search for a specific item. This shows the complete stock movement history (all GRNs and invoices) for that particular product, plus its current available stock.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 5 · Page 8</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 9 – CHAPTER 6: SETTINGS & DATA MANAGEMENT
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 6 · Settings & Data Management</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num red">6</div>
+        Settings & Data Management
+    </div>
+    <p class="chapter-desc">Configure your master records — customers, suppliers, items, and users — and protect your data.</p>
+
+    <div class="section-title">The Settings / Management Panel</div>
+    <p>Click <strong>Settings</strong> in the left sidebar to open the Management Panel. This is where you add and maintain all the core data that the POS system uses. The panel has four tabs:</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_settings_view_1777134580528.png" alt="Settings View" style="max-height: 200px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 6.1 — The Settings panel showing the Debtors management tab with Add, Edit, and Delete actions</div>
+    </div>
+
+    <div class="feature-grid" style="margin-top: 16px;">
+        <div class="feature-card">
+            <div class="feature-card-icon">👥</div>
+            <h4>Debtors (Customers)</h4>
+            <p>Add customers who buy on credit. Set their <strong>Name</strong>, <strong>Phone</strong>, <strong>Address</strong>, and <strong>Credit Limit</strong>. Customers registered here appear in the invoice dropdown. Their outstanding balance is tracked automatically.</p>
+        </div>
+        <div class="feature-card green">
+            <div class="feature-card-icon">🏭</div>
+            <h4>Creditors (Suppliers)</h4>
+            <p>Add your suppliers here. Enter their <strong>Name</strong>, <strong>Phone</strong>, <strong>Address</strong>, and <strong>Payment Terms</strong>. Registered creditors appear in the GRN supplier dropdown. Their balances are tracked automatically.</p>
+        </div>
+        <div class="feature-card blue">
+            <div class="feature-card-icon">📋</div>
+            <h4>Items (Products)</h4>
+            <p>Manage your product master list. Each item has a <strong>Part No</strong>, <strong>Name</strong>, initial <strong>Stock Qty</strong>, <strong>Unit Cost</strong>, and <strong>Selling Price</strong>. Items added here appear in all invoice and GRN searches.</p>
+        </div>
+        <div class="feature-card amber">
+            <div class="feature-card-icon">🔐</div>
+            <h4>Users</h4>
+            <p>Add and manage staff accounts. Each user has a <strong>Username</strong>, <strong>Password</strong>, and <strong>Role</strong> (Admin or Staff). Admin users have full access; Staff users have restricted access.</p>
+        </div>
+    </div>
+
+    <div class="section-title">How to Add a New Record</div>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <strong>Click the appropriate tab</strong> (Debtors, Creditors, Items, or Users) to switch to that section
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <strong>Click the "+ Add New" button</strong> at the top right — a form modal will appear
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <strong>Fill in all required fields</strong> in the form and click <strong>Save Record</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="callout info">
+        <div class="callout-icon">✏️</div>
+        <div class="callout-body">
+            <strong>Editing & Deleting Records</strong>
+            <p>Click the <strong>Edit</strong> button next to any record to modify its details. Click <strong>Delete</strong> to permanently remove it. Note: you cannot delete a record that is currently linked to existing invoices or GRNs — the system will warn you.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 6 · Page 9</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 10 – BACKUP & RESTORE
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 6 · Backup & Restore</div>
+    </div>
+
+    <div class="section-title" style="margin-top: 0;">💾 Backup & Restore Your Data</div>
+    <p>Since all data is stored in your browser's local storage, it is essential to <strong>regularly back up your data</strong>. If you clear your browser history, switch computers, or the browser's storage is accidentally cleared, you will lose your data <strong>unless you have a backup file</strong>.</p>
+
+    <div class="screenshot-frame">
+        <img src="C:\Users\nawod\.gemini\antigravity\brain\65ca70aa-7522-440b-9c2d-6945fd17e4ec\pos_backup_restore_1777134606206.png" alt="Backup and Restore" style="max-height: 210px; object-fit: cover; object-position: top;">
+        <div class="screenshot-caption">Figure 6.2 — The Backup & Restore dialog showing the Download and Restore options</div>
+    </div>
+
+    <div class="two-col" style="margin-top: 20px; gap: 20px;">
+        <div class="feature-card" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
+            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, #059669, #10B981); border-radius: 2px;"></div>
+            <div class="feature-card-icon">⬇️</div>
+            <h4>How to Create a Backup</h4>
+            <ol class="styled" style="margin-top: 8px;">
+                <li>Go to <strong>Dashboard</strong></li>
+                <li>Click <strong>Backup & Restore</strong> button</li>
+                <li>Click <strong>Download Backup</strong></li>
+                <li>A file named <span class="hl green">pos-backup-[date].json</span> is saved to your Downloads folder</li>
+                <li>Store this file safely (USB drive, cloud storage)</li>
+            </ol>
+        </div>
+        <div class="feature-card amber" style="background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.2);">
+            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: linear-gradient(180deg, #D97706, #F59E0B); border-radius: 2px;"></div>
+            <div class="feature-card-icon">⬆️</div>
+            <h4>How to Restore from Backup</h4>
+            <ol class="styled" style="margin-top: 8px;">
+                <li>Go to <strong>Dashboard</strong></li>
+                <li>Click <strong>Backup & Restore</strong> button</li>
+                <li>Click <strong>Choose File</strong> in the Restore section</li>
+                <li>Select your <span class="hl amber">.json</span> backup file</li>
+                <li>Click <strong>Restore from File</strong></li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="callout danger" style="margin-top: 20px;">
+        <div class="callout-icon">🚨</div>
+        <div class="callout-body">
+            <strong>Critical Warning: Never Clear Browser Data Without a Backup!</strong>
+            <p>Restoring a backup will <strong>completely overwrite all current data</strong>. Always confirm you have the correct backup file before restoring. Backup frequently — we recommend at least <strong>once per day</strong> at end of business.</p>
+        </div>
+    </div>
+
+    <div class="section-title" style="margin-top: 24px;">Recommended Backup Schedule</div>
+    <table class="data-table">
+        <thead><tr><th>Frequency</th><th>Who Should Do This</th><th>Storage Location</th></tr></thead>
+        <tbody>
+            <tr><td>Daily (end of business)</td><td>All shops</td><td>USB flash drive or Google Drive</td></tr>
+            <tr><td>Weekly</td><td>Shops with high transaction volume</td><td>External hard drive</td></tr>
+            <tr><td>Before major changes</td><td>All shops</td><td>Any safe location</td></tr>
+            <tr><td>Before browser updates</td><td>All shops</td><td>Any safe location</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout success" style="margin-top: 16px;">
+        <div class="callout-icon">🌐</div>
+        <div class="callout-body">
+            <strong>Moving to a New Computer</strong>
+            <p>To move your entire POS system to a new computer: (1) Create a backup on the old computer, (2) Copy the entire POS folder to the new computer, (3) Open the system on the new computer, (4) Go to Backup & Restore and restore your backup file. All your data will be fully restored.</p>
+        </div>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 6 · Page 10</span>
+    </div>
+</div>
+
+
+<!-- ================================================
+     PAGE 11 – QUICK REFERENCE CARD
+================================================ -->
+<div class="page">
+    <div class="page-header">
+        <div class="page-header-logo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path>
+            </svg>
+            Premium POS System
+        </div>
+        <div class="page-header-right">Chapter 7 · Quick Reference</div>
+    </div>
+
+    <div class="chapter-heading">
+        <div class="chapter-num">7</div>
+        Quick Reference Card
+    </div>
+    <p class="chapter-desc">Cut out or print this page and keep it near your till for quick reference.</p>
+
+    <div class="section-title">Common Tasks – At a Glance</div>
+    <table class="data-table">
+        <thead><tr><th>Task</th><th>How to Do It</th></tr></thead>
+        <tbody>
+            <tr>
+                <td><strong>🧾 Create a new invoice</strong></td>
+                <td>Dashboard → <em>New Invoice</em> (or Point of Sale → New Invoice)</td>
+            </tr>
+            <tr>
+                <td><strong>📦 Receive goods from supplier</strong></td>
+                <td>Inventory → Stock In/Out → fill GRN form → Save & Receive Stock</td>
+            </tr>
+            <tr>
+                <td><strong>🔍 Check stock of an item</strong></td>
+                <td>Dashboard → type item in <em>Quick Stock Check</em> box</td>
+            </tr>
+            <tr>
+                <td><strong>📋 View all invoices</strong></td>
+                <td>Point of Sale → Invoice History</td>
+            </tr>
+            <tr>
+                <td><strong>💳 Record a customer payment</strong></td>
+                <td>Point of Sale → Invoice History → click invoice → Mark as Paid</td>
+            </tr>
+            <tr>
+                <td><strong>🔄 Process a sales return</strong></td>
+                <td>Point of Sale → Sales Returns</td>
+            </tr>
+            <tr>
+                <td><strong>🔄 Process a purchase return</strong></td>
+                <td>Inventory → Purchase Returns</td>
+            </tr>
+            <tr>
+                <td><strong>📊 View sales report</strong></td>
+                <td>Reports → Periodic Sales Report → set dates → Filter</td>
+            </tr>
+            <tr>
+                <td><strong>📈 View Profit & Loss</strong></td>
+                <td>Reports → Profit & Loss → set dates → Filter</td>
+            </tr>
+            <tr>
+                <td><strong>💾 Backup data</strong></td>
+                <td>Dashboard → Backup & Restore → Download Backup</td>
+            </tr>
+            <tr>
+                <td><strong>➕ Add a new product</strong></td>
+                <td>Settings → Items tab → + Add New</td>
+            </tr>
+            <tr>
+                <td><strong>👤 Add a new customer</strong></td>
+                <td>Settings → Debtors tab → + Add New</td>
+            </tr>
+            <tr>
+                <td><strong>🏭 Add a new supplier</strong></td>
+                <td>Settings → Creditors tab → + Add New</td>
+            </tr>
+            <tr>
+                <td><strong>🔑 Add a new staff user</strong></td>
+                <td>Settings → Users tab → + Add New</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top: 22px;">Keyboard Shortcuts</div>
+    <div class="shortcut-grid">
+        <div class="shortcut-item">
+            <kbd class="kbd">Enter</kbd>
+            <span class="shortcut-action">Add selected item to invoice / GRN</span>
+        </div>
+        <div class="shortcut-item">
+            <kbd class="kbd">Esc</kbd>
+            <span class="shortcut-action">Close a modal or dropdown</span>
+        </div>
+        <div class="shortcut-item">
+            <kbd class="kbd">Tab</kbd>
+            <span class="shortcut-action">Move to next input field</span>
+        </div>
+        <div class="shortcut-item">
+            <kbd class="kbd">Ctrl</kbd> + <kbd class="kbd">P</kbd>
+            <span class="shortcut-action">Print the current view</span>
+        </div>
+    </div>
+
+    <div class="section-title" style="margin-top: 22px;">Troubleshooting</div>
+    <table class="data-table">
+        <thead><tr><th>Problem</th><th>Solution</th></tr></thead>
+        <tbody>
+            <tr><td>System won't open</td><td>Ensure you are opening <em>index.html</em> in Chrome or Edge. Do not open from a network path.</td></tr>
+            <tr><td>Item not found in search</td><td>Go to Settings → Items and add the item first before creating an invoice or GRN.</td></tr>
+            <tr><td>Customer not in dropdown</td><td>Walk-in customers don't need registration. For tracked customers, add via Settings → Debtors.</td></tr>
+            <tr><td>Data disappeared after clearing browser</td><td>Restore from your most recent backup file via Dashboard → Backup & Restore.</td></tr>
+            <tr><td>Invoice prints incorrectly</td><td>Ensure paper size is set to A4 in your printer settings. Disable "Print headers and footers" in browser.</td></tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 28px; padding: 16px 20px; border-radius: var(--radius-md); background: linear-gradient(135deg, rgba(108,71,255,0.08), rgba(56,189,248,0.06)); border: 1px solid rgba(108,71,255,0.2); text-align: center;">
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0;">
+            <strong style="color: var(--primary);">Premium POS System</strong> · Default Login: <span class="hl">admin</span> / <span class="hl">admin</span> · 
+            Data stored in browser local storage · Backup daily to protect your data<br>
+            <span style="font-size: 0.72rem;">For support, contact your system administrator or the software provider.</span>
+        </p>
+    </div>
+
+    <div class="page-footer">
+        <span>Premium POS System – Customer Guide</span>
+        <span>Chapter 7 · Page 11</span>
+    </div>
+</div>
+
+<!-- ================================================
+     FLOATING SAVE AS PDF BUTTON
+================================================ -->
+<div class="pdf-fab">
+    <button class="pdf-fab-btn" onclick="showPrintGuide()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Save as PDF (A4)
+    </button>
+    <div class="pdf-fab-label">Opens print-to-PDF guide</div>
+</div>
+
+<!-- Print Instruction Modal -->
+<div class="pdf-progress-wrap" id="pdf-instructions">
+    <div class="pdf-progress-card" style="max-width:470px;text-align:left;padding:36px 38px;">
+
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px;">
+            <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6C47FF,#38BDF8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            </div>
+            <div>
+                <div style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.15rem;color:#0F0F1A;">Save as PDF — 3 Easy Steps</div>
+                <div style="font-size:0.78rem;color:#5A5A72;margin-top:2px;">Set these options in the browser print dialog</div>
+            </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 15px;border-radius:12px;background:#F8FAFF;border:1px solid #E2E8F0;">
+                <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6C47FF,#8B6DFF);color:#fff;font-family:'Outfit',sans-serif;font-weight:800;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.88rem;color:#0F0F1A;margin-bottom:3px;">Destination → <span style="color:#6C47FF;">Save as PDF</span></div>
+                    <div style="font-size:0.78rem;color:#5A5A72;">Change the printer/destination to <strong>"Save as PDF"</strong></div>
+                </div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 15px;border-radius:12px;background:#F8FAFF;border:1px solid #E2E8F0;">
+                <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6C47FF,#8B6DFF);color:#fff;font-family:'Outfit',sans-serif;font-weight:800;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.88rem;color:#0F0F1A;margin-bottom:3px;">More settings → <span style="color:#059669;">☑ Background graphics</span></div>
+                    <div style="font-size:0.78rem;color:#5A5A72;">Click <strong>"More settings"</strong> and enable <strong>"Background graphics"</strong> — keeps all colors</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:14px;align-items:flex-start;padding:13px 15px;border-radius:12px;background:#F8FAFF;border:1px solid #E2E8F0;">
+                <div style="width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#6C47FF,#8B6DFF);color:#fff;font-family:'Outfit',sans-serif;font-weight:800;font-size:0.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+                <div>
+                    <div style="font-weight:700;font-size:0.88rem;color:#0F0F1A;margin-bottom:3px;">Margins → <span style="color:#D97706;">None</span> &nbsp;·&nbsp; Paper → <span style="color:#D97706;">A4</span></div>
+                    <div style="font-size:0.78rem;color:#5A5A72;">Set margins to <strong>"None"</strong>. Paper size should already show A4.</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.25);border-radius:10px;padding:10px 14px;margin-bottom:22px;font-size:0.78rem;color:#047857;display:flex;gap:8px;align-items:center;">
+            <span>✅</span>
+            <span><strong>A4 is already set in the CSS</strong> — the browser will auto-select it in the dialog.</span>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+            <button onclick="closePrintGuide()" style="flex:1;padding:12px;border-radius:10px;border:1px solid #E2E8F0;background:#fff;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.88rem;color:#5A5A72;cursor:pointer;">Cancel</button>
+            <button onclick="startPrint()" style="flex:2;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#6C47FF,#38BDF8);color:#fff;font-family:'Outfit',sans-serif;font-weight:700;font-size:0.92rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Open Print Dialog →
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showPrintGuide() {
+    document.getElementById('pdf-instructions').classList.add('active');
+}
+function closePrintGuide() {
+    document.getElementById('pdf-instructions').classList.remove('active');
+}
+function startPrint() {
+    closePrintGuide();
+    setTimeout(() => { window.print(); }, 280);
+}
+document.getElementById('pdf-instructions').addEventListener('click', function(e) {
+    if (e.target === this) closePrintGuide();
+});
+</script>
+
+</body>
+</html>
