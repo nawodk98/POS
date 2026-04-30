@@ -903,7 +903,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=6"></script>
+    <script src="script.js?v=7"></script>
     <script>
     // =============================================
     //  MULTITASK FLOATING PANEL SYSTEM
@@ -970,19 +970,23 @@
             document.getElementById('fp-stock-result').style.display = 'none';
             document.getElementById('fp-stock-empty').style.display = 'flex';
             if (q.length < 1) return;
-            const items = JSON.parse(localStorage.getItem('pos_items') || '[]');
+            // Read from actual mockDB (defined in script.js)
+            const dbData = (typeof mockDB !== 'undefined') ? mockDB : (JSON.parse(localStorage.getItem('pos-db') || '{}'));
+            const items = dbData.items || [];
             const matches = items.filter(i => i.name.toLowerCase().includes(q) || (i.partNo||'').toLowerCase().includes(q)).slice(0,8);
             if (!matches.length) return;
             matches.forEach(item => {
                 const d = document.createElement('div');
                 d.className = 'dropdown-item';
-                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc" style="color:var(--input-focus);font-weight:700;">Qty: ${item.qty??0}</span>`;
+                const stockQty = item.stock ?? 0;
+                const stockColor = stockQty > 0 ? '#10B981' : '#EF4444';
+                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc" style="color:${stockColor};font-weight:700;">Qty: ${stockQty}</span>`;
                 d.onclick = () => {
                     fpSearch.value = `${item.partNo ? item.partNo+' – ' : ''}${item.name}`;
                     fpDropdown.style.display = 'none';
-                    document.getElementById('fp-stock-qty').textContent = item.qty ?? 0;
-                    document.getElementById('fp-stock-price').textContent = 'LKR ' + parseFloat(item.sellingPrice||0).toLocaleString('en-LK',{minimumFractionDigits:2});
-                    document.getElementById('fp-stock-name').textContent = item.name;
+                    document.getElementById('fp-stock-qty').textContent = stockQty;
+                    document.getElementById('fp-stock-price').textContent = 'LKR ' + parseFloat(item.price||0).toLocaleString('en-LK',{minimumFractionDigits:2});
+                    document.getElementById('fp-stock-name').textContent = `${item.partNo ? item.partNo+' – ' : ''}${item.name}`;
                     document.getElementById('fp-stock-result').style.display = 'block';
                     document.getElementById('fp-stock-empty').style.display = 'none';
                 };
@@ -1000,9 +1004,11 @@
     function fpPopulateCustomers() {
         const sel = document.getElementById('fp-customer');
         if (!sel) return;
-        const debtors = JSON.parse(localStorage.getItem('pos_debtors') || '[]');
+        // Read from actual mockDB (defined in script.js)
+        const dbData = (typeof mockDB !== 'undefined') ? mockDB : (JSON.parse(localStorage.getItem('pos-db') || '{}'));
+        const debtors = dbData.debtors || [];
         sel.innerHTML = '<option value="">Walk-in Customer</option>';
-        debtors.forEach(d => { const o = document.createElement('option'); o.value = d.id||d.name; o.textContent = d.name; sel.appendChild(o); });
+        debtors.forEach(d => { const o = document.createElement('option'); o.value = d.id; o.textContent = d.name + (d.taxRegistered ? ' (Tax Reg.)' : ''); sel.appendChild(o); });
     }
 
     const fpItemSearch = document.getElementById('fp-item-search');
@@ -1016,17 +1022,20 @@
             document.getElementById('fp-price').disabled = true;
             document.getElementById('fp-add-item-btn').disabled = true;
             if (q.length < 1) return;
-            const items = JSON.parse(localStorage.getItem('pos_items') || '[]');
+            // Read from actual mockDB (defined in script.js)
+            const dbData = (typeof mockDB !== 'undefined') ? mockDB : (JSON.parse(localStorage.getItem('pos-db') || '{}'));
+            const items = dbData.items || [];
             const matches = items.filter(i => i.name.toLowerCase().includes(q) || (i.partNo||'').toLowerCase().includes(q)).slice(0,8);
             if (!matches.length) return;
             matches.forEach(item => {
                 const d = document.createElement('div');
                 d.className = 'dropdown-item';
-                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc">LKR ${parseFloat(item.sellingPrice||0).toFixed(2)}</span>`;
+                const stockQty = item.stock ?? 0;
+                d.innerHTML = `<span class="dropdown-item-title">${item.partNo||''} – ${item.name}</span><span class="dropdown-item-desc">LKR ${parseFloat(item.price||0).toFixed(2)} | Stock: ${stockQty}</span>`;
                 d.onclick = () => {
                     fpSelectedItem = item;
                     fpItemSearch.value = `${item.partNo ? item.partNo+' – ':'' }${item.name}`;
-                    document.getElementById('fp-price').value = parseFloat(item.sellingPrice||0).toFixed(2);
+                    document.getElementById('fp-price').value = parseFloat(item.price||0).toFixed(2);
                     document.getElementById('fp-qty').value = 1;
                     document.getElementById('fp-qty').disabled = false;
                     document.getElementById('fp-price').disabled = false;
@@ -1076,31 +1085,47 @@
 
     function fpSaveInvoice() {
         if (!fpItems.length) { alert('Please add at least one item.'); return; }
-        // Delegate to main script's save logic by populating the main invoice form and triggering save
-        // We open the standard invoice flow with items pre-filled
+
+        // Populate and navigate to the main invoice view
+        if (typeof initInvoiceNumber === 'function') initInvoiceNumber();
+        if (typeof showContent === 'function') showContent('invoice-view');
+
+        // Set customer, payment terms, tax
         const customerSel = document.getElementById('invoice-customer');
+        const payTerms    = document.getElementById('invoice-payment-terms');
+        const taxCb       = document.getElementById('tax-registered-checkbox');
         const fpCust = document.getElementById('fp-customer');
-        const fpPay = document.getElementById('fp-payment');
-        const fpTax = document.getElementById('fp-tax-reg');
-        if (customerSel) customerSel.value = fpCust ? fpCust.value : '';
-        const payTerms = document.getElementById('invoice-payment-terms');
-        if (payTerms) payTerms.value = fpPay ? fpPay.value : 'cash';
-        const taxCb = document.getElementById('tax-registered-checkbox');
-        if (taxCb) { taxCb.checked = fpTax ? fpTax.checked : false; taxCb.dispatchEvent(new Event('change')); }
-        // Navigate to invoice view
-        document.querySelectorAll('.tree-node').forEach(n => n.classList.remove('active'));
-        document.querySelectorAll('.content-view').forEach(v => v.classList.remove('active'));
-        const invView = document.getElementById('invoice-view');
-        if (invView) { invView.classList.add('active'); if (typeof initNewInvoice === 'function') initNewInvoice(); }
-        // Add items to invoice
+        const fpPay  = document.getElementById('fp-payment');
+        const fpTax  = document.getElementById('fp-tax-reg');
+        if (customerSel && fpCust) customerSel.value = fpCust.value;
+        if (payTerms    && fpPay)  payTerms.value    = fpPay.value;
+        if (taxCb       && fpTax)  { taxCb.checked = fpTax.checked; taxCb.dispatchEvent(new Event('change')); }
+
+        // Insert items into invoice table
         setTimeout(() => {
+            const tbl = document.getElementById('invoice-items');
+            if (!tbl) return;
             fpItems.forEach(r => {
-                window._fpPendingItems = window._fpPendingItems || [];
-                window._fpPendingItems.push(r);
+                const item = r.item;
+                // Check stock against mockDB
+                const dbData = (typeof mockDB !== 'undefined') ? mockDB : (JSON.parse(localStorage.getItem('pos-db') || '{}'));
+                const dbItem = (dbData.items || []).find(i => i.partNo === (item.partNo || item.id));
+                const qty   = r.qty || 1;
+                const price = r.price || 0;
+                const disc  = 0;
+                const lineTotal = qty * price - disc;
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${item.partNo||''}</td><td>${item.name}</td>
+                    <td><input type="number" class="item-qty glass-input num-input" value="${qty}" min="1" style="width:100%;text-align:center;"></td>
+                    <td><input type="number" class="item-price glass-input num-input" value="${price.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+                    <td><input type="number" class="item-disc glass-input num-input" value="${disc.toFixed(2)}" step="0.01" style="width:100%;text-align:center;"></td>
+                    <td class="item-total">${lineTotal.toFixed(2)}</td>
+                    <td><button class="action-btn text-danger remove-item-btn">×</button></td>`;
+                tbl.appendChild(row);
             });
-            if (typeof addFpItemsToInvoice === 'function') addFpItemsToInvoice();
-            else { fpItems.forEach(r => { if (typeof addInvoiceRow === 'function') addInvoiceRow(r.item, r.qty, r.price, 0); }); if(typeof recalcInvoice==='function') recalcInvoice(); }
-        }, 150);
+            if (typeof safeCalculateTotals === 'function') safeCalculateTotals();
+        }, 200);
+
         closeFloatPanel('quick-invoice-panel');
         fpItems = []; fpRenderItems();
     }

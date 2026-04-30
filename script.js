@@ -98,9 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (savedTheme) root.setAttribute('data-theme', savedTheme);
     else if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.setAttribute('data-theme', 'dark');
     themeToggle.addEventListener('click', () => {
-        const t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        root.setAttribute('data-theme', t);
-        localStorage.setItem('pos-theme', t);
+        const current = root.getAttribute('data-theme');
+        const next = current === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('pos-theme', next);
     });
 
     // Login
