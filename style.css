@@ -2,86 +2,86 @@
    LIGHT THEME (default :root)
 ============================================= */
 :root {
-    --bg-image: linear-gradient(rgba(200,240,255,0.45) 0%, rgba(180,230,250,0.40) 100%), url('warehouse_bg.jpg');
-    --bg-gradient: linear-gradient(135deg, #dff6ff 0%, #c8eeff 50%, #d8f5f0 100%);
+    --bg-image: linear-gradient(rgba(224, 242, 254, 0.4) 0%, rgba(186, 230, 253, 0.3) 100%), url('warehouse_bg.jpg');
+    --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0f2fe 100%);
 
-    /* Glass tiles — very transparent, white-tinted */
-    --card-bg: rgba(255, 255, 255, 0.18);
-    --card-border: rgba(255, 255, 255, 0.55);
-    --card-shadow: 0 8px 32px rgba(0,120,160,0.18), 0 1.5px 0 rgba(255,255,255,0.7) inset;
-    --glass-shine: rgba(255,255,255,0.6);
+    /* Glass tiles — translucent icy white */
+    --card-bg: rgba(255, 255, 255, 0.25);
+    --card-border: rgba(255, 255, 255, 0.6);
+    --card-shadow: 0 8px 32px rgba(2, 132, 199, 0.08), 0 1.5px 0 rgba(255, 255, 255, 0.7) inset;
+    --glass-shine: rgba(255, 255, 255, 0.6);
 
-    --text-primary: #0a2a3a;
-    --text-secondary: #2e6a80;
+    --text-primary: #082f49;
+    --text-secondary: #0ea5e9;
 
-    --input-bg: rgba(255, 255, 255, 0.30);
-    --input-border: rgba(0, 180, 200, 0.35);
-    --input-focus: #0097A7;
+    --input-bg: rgba(255, 255, 255, 0.4);
+    --input-border: rgba(186, 230, 253, 0.8);
+    --input-focus: #0284c7;
 
-    --btn-primary-bg: linear-gradient(135deg, #00897B 0%, #00ACC1 60%, #00BCD4 100%);
-    --btn-primary-hover: linear-gradient(135deg, #006B5E 0%, #0097A7 100%);
-    --btn-primary-shadow: 0 8px 20px rgba(0,150,180,0.35);
+    --btn-primary-bg: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+    --btn-primary-hover: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    --btn-primary-shadow: 0 8px 20px rgba(2, 132, 199, 0.25);
     --btn-text: #ffffff;
 
-    --theme-toggle-bg: rgba(255, 255, 255, 0.35);
-    --theme-toggle-color: #0097A7;
-    --theme-toggle-shadow: 0 4px 15px rgba(0,120,160,0.2);
+    --theme-toggle-bg: rgba(255, 255, 255, 0.45);
+    --theme-toggle-color: #0284c7;
+    --theme-toggle-shadow: 0 4px 15px rgba(2, 132, 199, 0.15);
 
-    --tree-active-bg: rgba(0, 180, 200, 0.15);
-    --tree-active-border: #0097A7;
-    --tree-hover-bg: rgba(0, 180, 200, 0.08);
+    --tree-active-bg: rgba(2, 132, 199, 0.1);
+    --tree-active-border: #0284c7;
+    --tree-hover-bg: rgba(2, 132, 199, 0.05);
 
-    --logo-bg: linear-gradient(135deg, #00897B, #00ACC1, #38BDF8);
+    --logo-bg: linear-gradient(135deg, #38bdf8, #0284c7);
 
-    --shape-1: #00BCD4;
-    --shape-2: #0288D1;
-    --shape-3: #26A69A;
+    --shape-1: rgba(186, 230, 253, 0.8);
+    --shape-2: rgba(125, 211, 252, 0.6);
+    --shape-3: rgba(224, 242, 254, 0.8);
 
-    --dropdown-bg: rgba(255,255,255,0.85);
-    --dropdown-text: #0a2a3a;
+    --dropdown-bg: rgba(255, 255, 255, 0.85);
+    --dropdown-text: #082f49;
 }
 
 /* =============================================
    DARK THEME
 ============================================= */
 [data-theme="dark"] {
-    --bg-image: linear-gradient(rgba(2,13,26,0.78) 0%, rgba(4,24,40,0.72) 100%), url('warehouse_bg.jpg');
-    --bg-gradient: linear-gradient(135deg, #020d1a 0%, #041828 50%, #020f1c 100%);
+    --bg-image: linear-gradient(rgba(0,0,0,0.75) 0%, rgba(10,10,10,0.7) 100%), url('warehouse_bg.jpg');
+    --bg-gradient: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #111111 100%);
 
-    /* Glass tiles — dark teal tinted */
-    --card-bg: rgba(0, 30, 55, 0.38);
-    --card-border: rgba(0, 201, 177, 0.22);
-    --card-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 1px 0 rgba(0,201,177,0.15) inset;
-    --glass-shine: rgba(0,201,177,0.12);
+    /* Glass tiles — black tinted */
+    --card-bg: rgba(0, 0, 0, 0.15);
+    --card-border: rgba(255, 255, 255, 0.15);
+    --card-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.1) inset;
+    --glass-shine: rgba(255,255,255,0.1);
 
-    --text-primary: #E2F0FF;
-    --text-secondary: #7FA8C9;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
 
-    --input-bg: rgba(0, 15, 35, 0.45);
-    --input-border: rgba(0, 201, 177, 0.25);
-    --input-focus: #00C9B1;
+    --input-bg: rgba(0, 0, 0, 0.3);
+    --input-border: rgba(255, 255, 255, 0.2);
+    --input-focus: #ffffff;
 
-    --btn-primary-bg: linear-gradient(135deg, #009B87 0%, #00C9B1 60%, #00d4f0 100%);
-    --btn-primary-hover: linear-gradient(135deg, #007d6e 0%, #009B87 100%);
-    --btn-primary-shadow: 0 8px 20px rgba(0,201,177,0.35);
+    --btn-primary-bg: linear-gradient(135deg, #444444 0%, #666666 60%, #888888 100%);
+    --btn-primary-hover: linear-gradient(135deg, #666666 0%, #888888 100%);
+    --btn-primary-shadow: 0 8px 20px rgba(0,0,0,0.4);
     --btn-text: #ffffff;
 
-    --theme-toggle-bg: rgba(0, 20, 40, 0.55);
-    --theme-toggle-color: #00C9B1;
-    --theme-toggle-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    --theme-toggle-bg: rgba(0, 0, 0, 0.3);
+    --theme-toggle-color: #ffffff;
+    --theme-toggle-shadow: 0 4px 15px rgba(0,0,0,0.5);
 
-    --tree-active-bg: rgba(0, 201, 177, 0.12);
-    --tree-active-border: #00C9B1;
-    --tree-hover-bg: rgba(0, 201, 177, 0.06);
+    --tree-active-bg: rgba(255, 255, 255, 0.12);
+    --tree-active-border: #ffffff;
+    --tree-hover-bg: rgba(255, 255, 255, 0.06);
 
-    --logo-bg: linear-gradient(135deg, #009B87, #00C9B1, #38BDF8);
+    --logo-bg: linear-gradient(135deg, #444444, #666666, #888888);
 
-    --shape-1: #00C9B1;
-    --shape-2: #0284C7;
-    --shape-3: #10B981;
+    --shape-1: #222222;
+    --shape-2: #333333;
+    --shape-3: #1a1a1a;
 
-    --dropdown-bg: rgba(2, 20, 40, 0.88);
-    --dropdown-text: #E2F0FF;
+    --dropdown-bg: rgba(0, 0, 0, 0.6);
+    --dropdown-text: #ffffff;
 }
 
 * {
